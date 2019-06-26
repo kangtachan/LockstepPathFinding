@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using LitJson;
 using UnityEngine;
 
 
@@ -27,8 +28,8 @@ public class TriangleNavMesh : NavMesh {
      *            @param scale 放大倍数
      */
     public TriangleNavMesh(String navMeshStr, int scale){
-        //graph = new TriangleGraph(JSON.parseObject(navMeshStr, TriangleData.class),scale);
-        //TODO
+        var data = JsonMapper.ToObject<TriangleData>(navMeshStr);
+        graph = new TriangleGraph(data,scale);
         pathFinder = new IndexedAStarPathFinder<Triangle>(graph);
         heuristic = new TriangleHeuristic();
     }

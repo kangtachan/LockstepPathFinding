@@ -2,32 +2,27 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-
-/**
- * navmesh寻路三角形网格数据 <br>
- * 依次三个顶点确定一个三角形
- * 
- * @author JiangZhiYong
- */
-public class NavMeshData  {
+[Serializable]
+public class NavMeshData {
+    public float agentRadius = 0.5f;
     private static long serialVersionUID = 1L;
 
     /** 行走区顶点序号 */
-    protected int[] pathTriangles;
+    public int[] pathTriangles;
     /** 行走区坐标 */
-    protected Vector3[] pathVertices;
+    public Vector3[] pathVertices;
 
     /** 开始坐标 */
-    private float startX;
-    private float startZ;
+    public float startX;
+    public float startZ;
     /** 结束坐标 */
-    private float endX;
-    private float endZ;
+    public float endX;
+    public float endZ;
     /** navmesh地图id */
-    private int mapID;
+    public int mapID;
 
-    protected float width;	// 宽
-    protected float height;	// 高
+    public float width;	// 宽
+    public float height;	// 高
 
     /**
      * 数据检测，客户端的顶点坐标和三角形数据有可能是重复的

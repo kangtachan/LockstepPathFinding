@@ -3,15 +3,9 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-
-/**
- * 三角形数据
- * @author JiangZhiYong
- * @mail 359135103@qq.com
- */
+[Serializable]
 public class TriangleData : NavMeshData{
 	private static long serialVersionUID = 1L;
-
 }
 
 

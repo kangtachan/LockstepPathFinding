@@ -8,18 +8,15 @@ using Object = UnityEngine.Object;
 
 public static class VectorExtention {
     public static Vector3 Add(this Vector3 vec, Vector3 val){
-        vec += val;
-        return vec;
+        return vec + val;
     }
 
     public static Vector3 sub(this Vector3 vec, Vector3 val){
-        vec -= val;
-        return vec;
+        return vec - val;
     }
 
     public static Vector3 scl(this Vector3 vec, float val){
-        vec *= val;
-        return vec;
+        return vec * val;
     }
 
     public static float dot(this Vector3 vec, Vector3 val){

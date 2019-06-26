@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using UnityEngine;
 using Lockstep.Math;
 using Debug = Lockstep.Logging.Debug;
@@ -9,6 +10,8 @@ public class Test : MonoBehaviour {
     public LVector2 dstPoint;
     // Start is called before the first frame update
     void Start(){
-        UnityEngine.Debug.Log("srcPoint " + srcPoint + " srcPoint" + dstPoint);
+        //UnityEngine.Debug.Log("srcPoint " + srcPoint + " srcPoint" + dstPoint);
+        var txt = Resources.Load<TextAsset>("Maps/101.navmesh");
+        var mesh = new TriangleNavMesh(txt.text);
     }
 }
