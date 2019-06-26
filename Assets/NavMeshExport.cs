@@ -11,7 +11,7 @@ public class NavMeshExport : MonoBehaviour {
 
     [MenuItem("Tools/Export NavMesh Data")]
     private static void Export(){
-        NavMeshTriangulation triangulatedNavMesh = NavMesh.CalculateTriangulation();
+        NavMeshTriangulation triangulatedNavMesh = UnityEngine.AI.NavMesh.CalculateTriangulation();
 
         Mesh mesh = new Mesh();
         mesh.name = "_NavMesh";
