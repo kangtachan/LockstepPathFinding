@@ -25,8 +25,7 @@ public class NavMeshData {
     public float height;	// 高
 
     /**
-     * 数据检测，客户端的顶点坐标和三角形数据有可能是重复的
-     * <br>
+     * 数据检测，客户端的顶点坐标和三角形数据有可能是重复的ç∂
      * TODO 小三角形合并成大三角形或多边形；判断顶点是否在寻路层中，寻路层中的顶点不能作为路径点；两点所连线段是否穿过阻挡区，不穿过，直接获取坐标点
      */
     public void check(int scale) {
@@ -39,8 +38,6 @@ public class NavMeshData {
 
     /**
      * 缩放向量
-     * 
-     * @param scale
      */
     protected void scaleVector(Vector3[] vertices, int scale) {
         if (vertices == null || scale == 1) {

@@ -29,5 +29,5 @@ public interface Graph<N> {
 	 *            the node whose outgoing connections will be returned
 	 * @return the array of connections outgoing from the given node.
 	 */
-	List<Connection<N>> getConnections(N fromNode);
+	List<Connection<N>> GetConnections(N fromNode);
 }

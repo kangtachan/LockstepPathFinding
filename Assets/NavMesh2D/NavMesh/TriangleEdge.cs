@@ -37,15 +37,15 @@ public class TriangleEdge :Connection<Triangle> {
 		this.leftVertex = leftVertex;
 	}
 
-	public  float getCost() {
+	public  float GetCost() {
 		return 1;
 	}
 
-	public  Triangle getFromNode() {
+	public  Triangle GetFromNode() {
 		return fromNode;
 	}
 
-	public  Triangle getToNode() {
+	public  Triangle GetToNode() {
 		return toNode;
 	}
 

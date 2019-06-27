@@ -1,31 +1,7 @@
-
-///*******************************************************************************
-
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-
-
-// * Copyright 2015 See AUTHORS file.
-// * Licensed under the Apache License, Version 2.0 (the "License");
-// * you may not use this file except in compliance with the License.
-// * You may obtain a copy of the License at
-// * http://www.apache.org/licenses/LICENSE-2.0
-// * Unless required by applicable law or agreed to in writing, software
-// * distributed under the License is distributed on an "AS IS" BASIS,
-// * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// * See the License for the specific language governing permissions and
-// * limitations under the License.
-// ******************************************************************************/
-//
-//
-
-
-/**navmesh 启发式消耗预估
- * <br>
- * @author jsjolund
- */
 public class TriangleHeuristic :Heuristic<Triangle> {
 
 	private static Vector3 A_AB = new Vector3();
@@ -35,15 +11,7 @@ public class TriangleHeuristic :Heuristic<Triangle> {
 	private static Vector3 B_BC = new Vector3();
 	private static Vector3 B_CA = new Vector3();
 
-	/**
-	 * Estimates the distance between two triangles, by calculating the distance
-	 * between their edge midpoints.
-	 *
-	 * @param node
-	 * @param endNode
-	 * @return
-	 */
-	public float estimate(Triangle node, Triangle endNode) {
+	public float Estimate(Triangle node, Triangle endNode) {
 		float dst2;
 		float minDst2 = float.MaxValue;
 		A_AB.set(node.a).Add(node.b).scl(0.5f);

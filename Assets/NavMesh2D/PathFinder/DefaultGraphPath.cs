@@ -27,11 +27,11 @@ public class DefaultGraphPath<N> : GraphPath<N> {
         this.nodes = nodes;
     }
 
-    public void clear(){
+    public void Clear(){
         nodes.Clear();
     }
 
-    public int getCount(){
+    public int GetCount(){
         return nodes.Count;
     }
 
@@ -39,7 +39,7 @@ public class DefaultGraphPath<N> : GraphPath<N> {
         nodes.Add(node);
     }
 
-    public N get(int index){
+    public N Get(int index){
         return nodes[index];
     }
 

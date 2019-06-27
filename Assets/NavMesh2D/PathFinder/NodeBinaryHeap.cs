@@ -17,11 +17,11 @@ public class Node {
 		this.value = value;
 	}
 
-	public float getValue() {
+	public float GetValue() {
 		return value;
 	}
 
-	public String ToString() {
+	public override String ToString() {
 		return value.ToString();
 	}
 }
@@ -32,114 +32,83 @@ public class Node {
 public class NodeBinaryHeap<T> where T: Node{
 	public int size;
 
-	private Node[] nodes;
-	private bool isMaxHeap;
+	private Node[] _nodes;
+	private bool _isMaxHeap;
 
-	public NodeBinaryHeap():this(16, false) {
-		
-	}
+	public NodeBinaryHeap():this(16, false) {}
 
 	public NodeBinaryHeap(int capacity, bool isMaxHeap) {
-		this.isMaxHeap = isMaxHeap;
-		nodes = new Node[capacity];
+		this._isMaxHeap = isMaxHeap;
+		_nodes = new Node[capacity];
 	}
 
-	/**
-	 * 添加节点
-	 * @param node
-	 * @return
-	 */
-	public T add(T node) {
+	public T Add(T node) {
 		// Expand if necessary.
-		if (size == nodes.Length) {
+		if (size == _nodes.Length) {
 			Node[] newNodes = new Node[size << 1];
-			Array.Copy(nodes, 0, newNodes, 0, size);
-			nodes = newNodes;
+			Array.Copy(_nodes, 0, newNodes, 0, size);
+			_nodes = newNodes;
 		}
 		// Insert at end and bubble up.
 		node.index = size;
-		nodes[size] = node;
-		up(size++);
+		_nodes[size] = node;
+		Up(size++);
 		return node;
 	}
 
-	/**
-	 * 添加节点，并设置排序比较值
-	 * @param node
-	 * @param value 排序比较值
-	 * @return
-	 */
 	public T Add(T node, float value) {
 		node.value = value;
-		return add(node);
+		return Add(node);
 	}
 
-	public T peek() {
+	public T Peek() {
 		if (size == 0)
 			throw new Exception("The heap is empty.");
-		return (T) nodes[0];
+		return (T) _nodes[0];
 	}
 
-	/**
-	 * 获得堆最小值，并移除
-	 * @return
-	 */
-	public T pop() {
-		return remove(0);
+	public T Pop() {
+		return Remove(0);
 	}
 
-	public T remove(T node) {
-		return remove(node.index);
+	public T Remove(T node) {
+		return Remove(node.index);
 	}
 
-	/**
-	 * 移除元素
-	 * @param index
-	 * @return
-	 */
-	private T remove(int index) {
-		Node[] nodes = this.nodes;
+	private T Remove(int index) {
+		Node[] nodes = this._nodes;
 		Node removed = nodes[index];
 		nodes[index] = nodes[--size];
 		nodes[size] = null;
 		if (size > 0 && index < size)
-			down(index);
+			Down(index);
 		return (T) removed;
 	}
-
-	public void clear() {
-		Node[] nodes = this.nodes;
+	//TODO 可以不用对nodes 进行清零
+	public void Clear() {
+		Node[] nodes = this._nodes;
 		for (int i = 0, n = size; i < n; i++)
 			nodes[i] = null;
 		size = 0;
 	}
 
-	/**
-	 * 设置节点值，并进行排序
-	 * @param node
-	 * @param value
-	 */
-	public void setValue(T node, float value) {
+	public void SetValue(T node, float value) {
 		float oldValue = node.value;
 		node.value = value;
-		if (value < oldValue ^ isMaxHeap)
-			up(node.index);
+		if ((value < oldValue )^ _isMaxHeap)
+			Up(node.index);
 		else
-			down(node.index);
+			Down(node.index);
 	}
 
-	/**
-	 * 如果节点值小于中间节点值，将节点上移，否则放在末尾
-	 * @param index
-	 */
-	private void up(int index) {
-		Node[] nodes = this.nodes;
+	private void Up(int index) {
+		Node[] nodes = this._nodes;
 		Node node = nodes[index];
 		float value = node.value;
 		while (index > 0) {
 			int parentIndex = (index - 1) >> 1;
 			Node parent = nodes[parentIndex];
-			if (value < parent.value ^ isMaxHeap) {
+			if ((value < parent.value) ^ _isMaxHeap) {
 				nodes[index] = parent;
 				parent.index = index;
 				index = parentIndex;
@@ -150,12 +119,8 @@ public class NodeBinaryHeap<T> where T: Node{
 		node.index = index;
 	}
 
-	/**
-	 * 节点后移
-	 * @param index
-	 */
-	private void down(int index) {
-		Node[] nodes = this.nodes;
+	private void Down(int index) {
+		Node[] nodes = this._nodes;
 		int size = this.size;
 
 		Node node = nodes[index];
@@ -165,32 +130,32 @@ public class NodeBinaryHeap<T> where T: Node{
 			int leftIndex = 1 + (index << 1);
 			if (leftIndex >= size)
 				break;
-			int rightIndex = leftIndex + 1;
 
 			// Always have a left child.
 			Node leftNode = nodes[leftIndex];
 			float leftValue = leftNode.value;
 
 			// May have a right child.
+			int rightIndex = leftIndex + 1;
 			Node rightNode;
 			float rightValue;
 			if (rightIndex >= size) {
 				rightNode = null;
-				rightValue = isMaxHeap ? float.MinValue : float.MaxValue;
+				rightValue = _isMaxHeap ? float.MinValue : float.MaxValue;
 			} else {
 				rightNode = nodes[rightIndex];
 				rightValue = rightNode.value;
 			}
 
 			// The smallest of the three values is the parent.
-			if (leftValue < rightValue ^ isMaxHeap) {
-				if (leftValue == value || (leftValue > value ^ isMaxHeap))
+			if ((leftValue < rightValue) ^ _isMaxHeap) {
+				if (leftValue == value || ((leftValue > value) ^ _isMaxHeap))
 					break;
 				nodes[index] = leftNode;
 				leftNode.index = index;
 				index = leftIndex;
 			} else {
-				if (rightValue == value || (rightValue > value ^ isMaxHeap))
+				if (rightValue == value || ((rightValue > value) ^ _isMaxHeap))
 					break;
 				nodes[index] = rightNode;
 				rightNode.index = index;
@@ -204,10 +169,10 @@ public class NodeBinaryHeap<T> where T: Node{
 
 
 
-	public int GetHashCode() {
+	public override int GetHashCode() {
 		int h = 1;
 		for (int i = 0, n = size; i < n; i++)
-			h = h * 31 + FloatToIntBits(nodes[i].value);
+			h = h * 31 + FloatToIntBits(_nodes[i].value);
 		return h;
 	}
 
@@ -226,10 +191,10 @@ public class NodeBinaryHeap<T> where T: Node{
 		public float Afloat;
 	}
 	
-	public String ToString() {
+	public override String ToString() {
 		if (size == 0)
 			return "[]";
-		Node[] nodes = this.nodes;
+		Node[] nodes = this._nodes;
 		StringBuilder buffer = new StringBuilder(32);
 		buffer.Append('[');
 		buffer.Append(nodes[0].value);
@@ -240,6 +205,4 @@ public class NodeBinaryHeap<T> where T: Node{
 		buffer.Append(']');
 		return buffer.ToString();
 	}
-
-
 }

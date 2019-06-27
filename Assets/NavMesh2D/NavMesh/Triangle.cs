@@ -2,13 +2,6 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-
-/**
- * 三角形
- * 
- * @author JiangZhiYong
- * @QQ 359135103 2017年11月7日 下午4:41:27
- */
 public class Triangle {
     /** 三角形序号 */
     public int index;

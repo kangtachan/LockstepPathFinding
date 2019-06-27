@@ -413,7 +413,7 @@ public class TrianglePointPath  {
 			addPoint(start, startTri);
 			addPoint(end, startTri);
 		} else {
-			lastEdge = new TriangleEdge(nodes.get(nodes.Count - 1).getToNode(), nodes.get(nodes.Count - 1).getToNode(), end,
+			lastEdge = new TriangleEdge(nodes.get(nodes.Count - 1).GetToNode(), nodes.get(nodes.Count - 1).GetToNode(), end,
 					end);
 			calculateEdgePoints(calculateCrossPoint);
 		}

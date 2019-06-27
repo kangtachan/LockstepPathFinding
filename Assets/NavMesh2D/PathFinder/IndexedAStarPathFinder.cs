@@ -1,166 +1,116 @@
 using System;
-using System.Collections.Generic;
-using UnityEngine;
 
-
-/** 
- * A*寻路
- * <br>
- * A fully implemented {@link PathFinder} that can perform both interruptible and non-interruptible pathfinding.
- * <p>
- * This implementation is a common variation of the A* algorithm that is faster than the general A*.
- * <p>
- * In the general A* implementation, data are held for each node in the open or closed lists, and these data are held as a
- * NodeRecord instance. Records are created when a node is first considered and then moved between the open and closed lists, as
- * required. There is a key step in the algorithm where the lists are searched for a node record corresponding to a particular
- * node. This operation is something time-consuming.
- * <p>
- * The indexed A* algorithm improves execution speed by using an array of all the node records for every node in the graph. Nodes
- * must be numbered using sequential integers (see {@link IndexedGraph#getIndex(Object)}), so we don't need to search for a node in the
- * two lists at all. We can simply use the node index to look up its record in the array (creating it if it is missing). This
- * means that the close list is no longer needed. To know whether a node is open or closed, we use the {@link NodeRecord#category
- * category} of the node record. This makes the search step very fast indeed (in fact, there is no search, and we can go straight
- * to the information we need). Unfortunately, we can't get rid of the open list because we still need to be able to retrieve the
- * element with the lowest cost. However, we use a {@link NodeBinaryHeap} for the open list in order to keep performance as high as
- * possible.
- * 
- * @param <N> Type of node
- * 
- * @author davebaol 
- * @fix JiangZhiYong
- * */
 public class IndexedAStarPathFinder<N> : PathFinder<N> {
-    IndexedGraph<N> graph; //图数据
-    NodeRecord<N>[] nodeRecords;
-    NodeBinaryHeap<NodeRecord<N>> openList;
-    NodeRecord<N> current; //当前节点
-    public Metrics metrics;
-
+    private IndexedGraph<N> _graph;
+    private NodeRecord<N>[] _nodeRecords;
+    private NodeBinaryHeap<NodeRecord<N>> _openList;
     /** The unique ID for each search run. Used to mark nodes. */
-    private int searchId;
+    private int _searchId;
+    private NodeRecord<N> _current;
+    
+    public Metrics metrics;
 
     private static int UNVISITED = 0;
     private static int OPEN = 1;
-    private static int CLOSED = 2; //已访问的节点
+    private static int CLOSED = 2;
 
     public IndexedAStarPathFinder(IndexedGraph<N> graph) : this(graph, false){ }
 
     public IndexedAStarPathFinder(IndexedGraph<N> graph, bool calculateMetrics){
-        this.graph = graph;
-        this.nodeRecords =  new NodeRecord<N>[graph.getNodeCount()];
-        this.openList = new NodeBinaryHeap<NodeRecord<N>>();
+        this._graph = graph;
+        this._nodeRecords = new NodeRecord<N>[graph.GetNodeCount()];
+        this._openList = new NodeBinaryHeap<NodeRecord<N>>();
         if (calculateMetrics) this.metrics = new Metrics();
     }
 
-    public bool searchConnectionPath(N startNode, N endNode, Heuristic<N> heuristic, GraphPath<Connection<N>> outPath){
+    public bool SearchPath(N startNode, N endNode, Heuristic<N> heuristic, GraphPath<Connection<N>> outPath){
         if (startNode == null) {
-            //LOGGER.debug("起点坐标不在寻路层中");
+            UnityEngine.Debug.LogError("起点坐标不在寻路层中");
             return false;
         }
 
         if (endNode == null) {
-            //LOGGER.debug("终点坐标不在寻路层中");
+            UnityEngine.Debug.LogError("终点坐标不在寻路层中");
             return false;
         }
 
         // Perform AStar
-        bool found = search(startNode, endNode, heuristic);
+        bool found = Search(startNode, endNode, heuristic);
 
         if (found) {
             // Create a path made of connections
-            generateConnectionPath(startNode, outPath);
+            GeneratePath(startNode, outPath);
         }
 
         return found;
     }
 
-    public bool searchNodePath(N startNode, N endNode, Heuristic<N> heuristic, GraphPath<N> outPath){
+    public bool SearchNodePath(N startNode, N endNode, Heuristic<N> heuristic, GraphPath<N> outPath){
         // Perform AStar
-        bool found = search(startNode, endNode, heuristic);
+        bool found = Search(startNode, endNode, heuristic);
 
         if (found) {
             // Create a path made of nodes
-            generateNodePath(startNode, outPath);
+            GenerateNodePath(startNode, outPath);
         }
 
         return found;
     }
 
-    /**
-     * 搜寻路径
-     * @param startNode
-     * @param endNode
-     * @param heuristic
-     * @return <code>true</code> 查找到路径
-     */
-    protected bool search(N startNode, N endNode, Heuristic<N> heuristic){
-        initSearch(startNode, endNode, heuristic);
+    protected bool Search(N startNode, N endNode, Heuristic<N> heuristic){
+        InitSearch(startNode, endNode, heuristic);
 
         // Iterate through processing each node
-        // 迭代开列表，依次从中取出消耗最小的节点，直到找到最终目的地或路径查询失败
         do {
-            // Retrieve the node with smallest estimated total cost from the open list，取出消耗最小节点，暂时标识为关列表
-            current = openList.pop();
-            current.category = CLOSED;
+            // Retrieve the node with smallest estimated total cost from the open list
+            _current = _openList.Pop();
+            _current.category = CLOSED;
 
             // Terminate if we reached the goal node
-            if (current.node.Equals(endNode)) return true;
-//			LOGGER.debug("当前节点{},目标节点{}",current.node.ToString(),endNode.ToString());
+            if (_current.node.Equals(endNode)) return true;
 
-            visitChildren(endNode, heuristic);
-        } while (openList.size > 0);
+            VisitChildren(endNode, heuristic);
+        } while (_openList.size > 0);
 
         // We've run out of nodes without finding the goal, so there's no solution
         return false;
     }
 
- 
-    /**
-     * 初始化查询
-     * @param startNode
-     * @param endNode
-     * @param heuristic
-     */
-    protected void initSearch(N startNode, N endNode, Heuristic<N> heuristic){
-        if (metrics != null) metrics.reset();
+    protected void InitSearch(N startNode, N endNode, Heuristic<N> heuristic){
+        metrics?.reset();
 
         // Increment the search id
-        if (++searchId < 0) searchId = 1;
+        if (++_searchId < 0) _searchId = 1;
 
         // Initialize the open list
-        openList.clear();
+        _openList.Clear();
 
         // Initialize the record for the start node and add it to the open list
-        NodeRecord<N> startRecord = getNodeRecord(startNode);
+        NodeRecord<N> startRecord = GetNodeRecord(startNode);
         startRecord.node = startNode;
         startRecord.connection = null;
         startRecord.costSoFar = 0;
-        addToOpenList(startRecord, heuristic.estimate(startNode, endNode));
+        AddToOpenList(startRecord, heuristic.Estimate(startNode, endNode));
 
-        current = null;
+        _current = null;
     }
 
-    /**
-     * 访问孩子节点
-     * @param endNode
-     * @param heuristic
-     */
-    protected void visitChildren(N endNode, Heuristic<N> heuristic){
+    protected void VisitChildren(N endNode, Heuristic<N> heuristic){
         // Get current node's outgoing connections
-        var connections = graph.getConnections(current.node);
+        var connections = _graph.GetConnections(_current.node);
 
         // Loop through each connection in turn
         for (int i = 0; i < connections.Count; i++) {
-            if (metrics != null) metrics.visitedNodes++;
+            if (metrics != null) metrics.VisitedNodes++;
 
             Connection<N> connection = connections[i];
 
             // Get the cost estimate for the node
-            N node = connection.getToNode(); //周围目标节点
-            float nodeCost = current.costSoFar + connection.getCost(); //节点到目标的消耗
+            N node = connection.GetToNode(); //周围目标节点
+            float nodeCost = _current.costSoFar + connection.GetCost(); //节点到目标的消耗
 
             float nodeHeuristic;
-            NodeRecord<N> nodeRecord = getNodeRecord(node);
+            NodeRecord<N> nodeRecord = GetNodeRecord(node);
             if (nodeRecord.category == CLOSED) { // The node is closed
 
                 // If we didn't find a shorter route, skip 已经是消耗最小的目标点
@@ -168,7 +118,7 @@ public class IndexedAStarPathFinder<N> : PathFinder<N> {
 
                 // We can use the node's old cost values to calculate its heuristic
                 // without calling the possibly expensive heuristic function
-                nodeHeuristic = nodeRecord.getEstimatedTotalCost() - nodeRecord.costSoFar;
+                nodeHeuristic = nodeRecord.GetEstimatedTotalCost() - nodeRecord.costSoFar;
             }
             else if (nodeRecord.category == OPEN) { // The node is open
 
@@ -176,17 +126,17 @@ public class IndexedAStarPathFinder<N> : PathFinder<N> {
                 if (nodeRecord.costSoFar <= nodeCost) continue;
 
                 // Remove it from the open list (it will be re-added with the new cost)
-                openList.remove(nodeRecord);
+                _openList.Remove(nodeRecord);
 
                 // We can use the node's old cost values to calculate its heuristic
                 // without calling the possibly expensive heuristic function
-                nodeHeuristic = nodeRecord.getEstimatedTotalCost() - nodeRecord.costSoFar;
+                nodeHeuristic = nodeRecord.GetEstimatedTotalCost() - nodeRecord.costSoFar;
             }
             else { // the node is unvisited
 
                 // We'll need to calculate the heuristic value using the function,
                 // since we don't have a node record with a previously calculated value
-                nodeHeuristic = heuristic.estimate(node, endNode);
+                nodeHeuristic = heuristic.Estimate(node, endNode);
             }
 
             // Update node record's cost and connection
@@ -194,38 +144,28 @@ public class IndexedAStarPathFinder<N> : PathFinder<N> {
             nodeRecord.connection = connection;
 
             // Add it to the open list with the estimated total cost
-            addToOpenList(nodeRecord, nodeCost + nodeHeuristic);
+            AddToOpenList(nodeRecord, nodeCost + nodeHeuristic);
         }
     }
 
-    /**
-     * 生成链接关系路径
-     * @param startNode
-     * @param outPath
-     */
-    protected void generateConnectionPath(N startNode, GraphPath<Connection<N>> outPath){
+    protected void GeneratePath(N startNode, GraphPath<Connection<N>> outPath){
         // Work back along the path, accumulating connections
         // outPath.clear();
-        while (!current.node.Equals(startNode)) {
-            outPath.Add(current.connection);
-            current = nodeRecords[graph.getIndex(current.connection.getFromNode())];
+        while (!_current.node.Equals(startNode)) {
+            outPath.Add(_current.connection);
+            _current = _nodeRecords[_graph.GetIndex(_current.connection.GetFromNode())];
         }
 
         // Reverse the path
         outPath.reverse();
     }
 
-    /**
-     * 生成链接节点路径
-     * @param startNode
-     * @param outPath
-     */
-    protected void generateNodePath(N startNode, GraphPath<N> outPath){
+    protected void GenerateNodePath(N startNode, GraphPath<N> outPath){
         // Work back along the path, accumulating nodes
         // outPath.clear();
-        while (current.connection != null) {
-            outPath.Add(current.node);
-            current = nodeRecords[graph.getIndex(current.connection.getFromNode())];
+        while (_current.connection != null) {
+            outPath.Add(_current.node);
+            _current = _nodeRecords[_graph.GetIndex(_current.connection.GetFromNode())];
         }
 
         outPath.Add(startNode);
@@ -234,50 +174,33 @@ public class IndexedAStarPathFinder<N> : PathFinder<N> {
         outPath.reverse();
     }
 
-    /**
-     * 加入开列表
-     * @param nodeRecord
-     * @param estimatedTotalCost	预估的消耗
-     */
-    protected void addToOpenList(NodeRecord<N> nodeRecord, float estimatedTotalCost){
-        openList.Add(nodeRecord, estimatedTotalCost);
+    protected void AddToOpenList(NodeRecord<N> nodeRecord, float estimatedTotalCost){
+        _openList.Add(nodeRecord, estimatedTotalCost);
         nodeRecord.category = OPEN;
         if (metrics != null) {
-            metrics.openListAdditions++;
-            metrics.openListPeak = Math.Max(metrics.openListPeak, openList.size);
+            ++metrics.OpenListAdditions;
+            if (_openList.size > metrics.OpenListPeak) metrics.OpenListPeak = _openList.size;
         }
     }
 
-    /**
-     * 获取节点记录对象
-     * @param node
-     * @return
-     */
-    protected NodeRecord<N> getNodeRecord(N node){
-        int index = graph.getIndex(node);
-        NodeRecord<N> nr = nodeRecords[index];
+    protected NodeRecord<N> GetNodeRecord(N node){
+        int index = _graph.GetIndex(node);
+        NodeRecord<N> nr = _nodeRecords[index];
         if (nr != null) {
-            if (nr.searchId != searchId) {
+            if (nr.searchId != _searchId) {
                 nr.category = UNVISITED;
-                nr.searchId = searchId;
+                nr.searchId = _searchId;
             }
 
             return nr;
         }
 
-        nr = nodeRecords[index] = new NodeRecord<N>();
+        nr = _nodeRecords[index] = new NodeRecord<N>();
         nr.node = node;
-        nr.searchId = searchId;
+        nr.searchId = _searchId;
         return nr;
     }
 
-    /** 寻路搜索节点记录
-     * <br>
-     * This nested class is used to keep track of the information we need for each node during the search.
-     * 
-     * @param <N> Type of node
-     * 
-     * @author davebaol */
     public class NodeRecord<N> : Node {
         /** The reference to the node. */
         public N node;
@@ -298,26 +221,22 @@ public class IndexedAStarPathFinder<N> : PathFinder<N> {
         public NodeRecord() : base(0){ }
 
         /** Returns the estimated total cost. */
-        public float getEstimatedTotalCost(){
-            return getValue();
+        public float GetEstimatedTotalCost(){
+            return value;
         }
     }
 
-    /**度量统计
-     *  A class used by {@link IndexedAStarPathFinder} to collect search metrics.
-     * 
-     * @author davebaol */
     public class Metrics {
-        public int visitedNodes; //访问节点次数
-        public int openListAdditions; //记录开列表次数
-        public int openListPeak; //记录开列表最大个数值
+        public int VisitedNodes;
+        public int OpenListAdditions;
+        public int OpenListPeak;
 
         public Metrics(){ }
 
         public void reset(){
-            visitedNodes = 0;
-            openListAdditions = 0;
-            openListPeak = 0;
+            VisitedNodes = 0;
+            OpenListAdditions = 0;
+            OpenListPeak = 0;
         }
     }
 }

@@ -1,18 +1,9 @@
 
-
 using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 
-
-
-/**
- * navmesh寻路入口
- * 
- * @author JiangZhiYong
- * @mail 359135103@qq.com
- */
 public abstract class NavMesh {
 
 	/** 地图宽x轴 */

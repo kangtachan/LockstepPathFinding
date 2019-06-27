@@ -4,59 +4,41 @@ using System.Linq;
 using LitJson;
 using UnityEngine;
 
-
-/**
- * 寻路网格
- * <br>
- * TODO 获取不在寻路中，离当前点最近且在寻路层中的点；随机或者指定点的周围坐标点
- * @note 限制：三角形顶点需要在寻路层边缘，不能存在共边不共顶点
- * @author JiangZhiYong
- * @QQ 359135103 2017年11月7日 下午4:40:36
- */
 public class TriangleNavMesh : NavMesh {
-    private TriangleGraph graph; // 导航数据图
-    private TriangleHeuristic heuristic; // 寻路消耗计算
-    private IndexedAStarPathFinder<Triangle> pathFinder; // A*寻路算法
-
+    private TriangleGraph _graph; 
+    private TriangleHeuristic _heuristic; 
+    private IndexedAStarPathFinder<Triangle> _pathFinder; 
 
     public TriangleNavMesh(String navMeshStr) : this(navMeshStr, 1){ }
 
-    /**
-     * 
-     * @param navMeshStr
-     *            导航网格数据
-     *            @param scale 放大倍数
-     */
     public TriangleNavMesh(String navMeshStr, int scale){
         var data = JsonMapper.ToObject<TriangleData>(navMeshStr);
-        graph = new TriangleGraph(data,scale);
-        pathFinder = new IndexedAStarPathFinder<Triangle>(graph);
-        heuristic = new TriangleHeuristic();
+        _graph = new TriangleGraph(data,scale);
+        _pathFinder = new IndexedAStarPathFinder<Triangle>(_graph);
+        _heuristic = new TriangleHeuristic();
     }
 
     public TriangleGraph getGraph(){
-        return graph;
+        return _graph;
     }
 
     public TriangleHeuristic getHeuristic(){
-        return heuristic;
+        return _heuristic;
     }
 
     public IndexedAStarPathFinder<Triangle> getPathFinder(){
-        return pathFinder;
+        return _pathFinder;
     }
 
-    /**
-     * 查询路径
-     * 
-     * @param fromPoint
-     * @param toPoint
-     * @param path
-     */
-    private bool findPath(Vector3 fromPoint, Vector3 toPoint, TriangleGraphPath path){
-        path.clear();
-        Triangle fromTriangle = getTriangle(fromPoint);
-        if (pathFinder.searchConnectionPath(fromTriangle, getTriangle(toPoint), heuristic, path)) {
+   
+    public Triangle GetTriangle(Vector3 point){
+        return _graph.GetTriangle(point);
+    }
+   
+    private bool FindPath(Vector3 fromPoint, Vector3 toPoint, TriangleGraphPath path){
+        path.Clear();
+        Triangle fromTriangle = GetTriangle(fromPoint);
+        if (_pathFinder.SearchPath(fromTriangle, GetTriangle(toPoint), _heuristic, path)) {
             path.start = fromPoint;
             path.end = toPoint;
             path.startTri = fromTriangle;
@@ -66,17 +48,10 @@ public class TriangleNavMesh : NavMesh {
         return false;
     }
 
-    /**
-     * 获取路径
-     * 
-     * @param fromPoint
-     * @param toPoint
-     * @param navMeshPointPath
-     * @return
-     */
-    public List<Vector3> findPath(Vector3 fromPoint, Vector3 toPoint, TrianglePointPath navMeshPointPath){
+  
+    public List<Vector3> FindPath(Vector3 fromPoint, Vector3 toPoint, TrianglePointPath navMeshPointPath){
         TriangleGraphPath navMeshGraphPath = new TriangleGraphPath();
-        bool find = findPath(fromPoint, toPoint, navMeshGraphPath);
+        bool find = FindPath(fromPoint, toPoint, navMeshGraphPath);
         if (!find) {
             return navMeshPointPath.getVectors();
         }
@@ -84,19 +59,4 @@ public class TriangleNavMesh : NavMesh {
         navMeshPointPath.calculateForGraphPath(navMeshGraphPath, false);
         return navMeshPointPath.getVectors();
     }
-
-
-    /**
-     * 获取坐标点所在的三角形
-     * 
-     * @note 很耗时，迭代所有三角形寻找
-     * @param point
-     * @return
-     */
-    public Triangle getTriangle(Vector3 point){
-        //TODO 高度判断，有可能有分层重叠多边形
-        var optional = graph.getTriangles().Where(t => t.isInnerPoint(point)).First();
-        return optional;
-    }
-
 }

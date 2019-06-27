@@ -17,9 +17,9 @@ public interface IndexedGraph<N> : Graph<N> {
 	/** Returns the unique index of the given node.
 	 * @param node the node whose index will be returned
 	 * @return the unique index of the given node. */
-	int getIndex (N node);
+	int GetIndex (N node);
 
 	/** Returns the number of nodes in this graph. */
-	int getNodeCount ();
+	int GetNodeCount ();
 
 }
