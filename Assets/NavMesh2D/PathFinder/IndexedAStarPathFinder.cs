@@ -2,7 +2,7 @@ using System;
 
 public class IndexedAStarPathFinder<N> : PathFinder<N> {
     private IndexedGraph<N> _graph;
-    private NodeRecord<N>[] _nodeRecords;
+    public NodeRecord<N>[] _nodeRecords;
     private NodeBinaryHeap<NodeRecord<N>> _openList;
     /** The unique ID for each search run. Used to mark nodes. */
     private int _searchId;
@@ -10,9 +10,9 @@ public class IndexedAStarPathFinder<N> : PathFinder<N> {
     
     public Metrics metrics;
 
-    private static int UNVISITED = 0;
-    private static int OPEN = 1;
-    private static int CLOSED = 2;
+    public const int UNVISITED = 0;
+    public const int OPEN = 1;
+    public const int CLOSED = 2;
 
     public IndexedAStarPathFinder(IndexedGraph<N> graph) : this(graph, false){ }
 

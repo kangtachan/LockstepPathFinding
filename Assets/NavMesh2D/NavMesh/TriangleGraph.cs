@@ -6,7 +6,7 @@ using UnityEngine.Profiling;
 
 public class TriangleGraph : IndexedGraph<Triangle> {
     private NavMeshData _navMeshData;
-    private List<Triangle> _triangles = new List<Triangle>();
+    public List<Triangle> _triangles = new List<Triangle>();
 
     private Dictionary<Triangle, List<Connection<Triangle>>> _sharedEdges;
     private Dictionary<Triangle, List<Connection<Triangle>>> _isolatedEdgesMap;
@@ -95,9 +95,11 @@ public class TriangleGraph : IndexedGraph<Triangle> {
                 b0 = indices[j++];
                 b1 = indices[j++];
                 b2 = indices[j++];
-                if (triAIndex == triBIndex) {
-                    // j+=3;
-                    continue;
+                if (triAIndex == 221) {
+                    int ss = 0;
+                    if (triBIndex == 374) {
+                        int sge = 0;
+                    }
                 }
 
                 if (HasSharedEdgeIndices(a0, a1, a2, b0, b1, b2, edge)) {

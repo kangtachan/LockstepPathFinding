@@ -6,16 +6,16 @@ using UnityEngine;
 using Debug = Lockstep.Logging.Debug;
 
 public class TriangleNavMesh : NavMesh {
-    private TriangleGraph _graph;
+    public TriangleGraph _graph;
     private TriangleHeuristic _heuristic;
-    private IndexedAStarPathFinder<Triangle> _pathFinder;
+    public IndexedAStarPathFinder<Triangle> _pathFinder;
 
     public TriangleNavMesh(String navMeshStr) : this(navMeshStr, 1){ }
 
     public TriangleNavMesh(String navMeshStr, int scale){
         var data = JsonMapper.ToObject<TriangleData>(navMeshStr);
         _graph = new TriangleGraph(data, scale);
-        _pathFinder = new IndexedAStarPathFinder<Triangle>(_graph);
+        _pathFinder = new IndexedAStarPathFinder<Triangle>(_graph,true);
         _heuristic = new TriangleHeuristic();
     }
 

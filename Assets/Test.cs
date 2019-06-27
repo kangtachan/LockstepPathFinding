@@ -29,11 +29,18 @@ public class Test : MonoBehaviour {
         NavMesh = new TriangleNavMesh(txt.text);
         if (lineRenderer == null)
             lineRenderer = GetComponentInChildren<LineRenderer>();
-        debugGo = new GameObject("PathMesh");
-        debugMesh = new Mesh();
-        debugGo.AddComponent<MeshRenderer>().material = debugMeshMat;
-        debugGo.AddComponent<MeshFilter>().mesh = debugMesh;
-        debugGo.transform.position = Vector3.up;
+        resultMesh = CreateMeshGo("PathMesh", 1.0f);
+        progressMesh = CreateMeshGo("ProgressMesh", 0.5f);
+        allMesh = CreateMeshGo("AllMesh", 0.2f);
+    }
+
+    private MeshFilter CreateMeshGo(string name, float high){
+        var mesh = new Mesh();
+        mesh.MarkDynamic();
+        var go = new GameObject(name);
+        go.AddComponent<MeshRenderer>().material = debugMeshMat;
+        go.transform.position = Vector3.up * high;
+        return go.AddComponent<MeshFilter>();
     }
 
     private void Update(){
@@ -43,9 +50,9 @@ public class Test : MonoBehaviour {
 
     public TrianglePointPath path = new TrianglePointPath();
     public float widthMultiplier = 2;
-    public List<Triangle> DebugTriangles = new List<Triangle>();
-    private Mesh debugMesh;
-    private GameObject debugGo;
+    private MeshFilter resultMesh;
+    private MeshFilter progressMesh;
+    private MeshFilter allMesh;
     public Material debugMeshMat;
     public float useTime;
 
@@ -61,51 +68,130 @@ public class Test : MonoBehaviour {
 
         var graph = NavMesh.navMeshGraphPath;
         if (graph != null) {
-            DebugTriangles.Clear();
-            foreach (var node in graph.nodes) {
-                DebugTriangles.Add(node.GetFromNode());
-            }
-
-            DebugTriangles.Add(graph.GetEndTriangle());
-            var triCount = DebugTriangles.Count;
-            if (DebugTriangles.Count <= 1 || DebugTriangles[0] == null) {
-                triCount = 0;
-                debugMesh.Clear();
-            }
-            else {
-                var colors = new Color[triCount * 3];
-                var vecs = new Vector3[triCount * 3];
-                var idxs = new int[triCount * 3];
-                for (int i = 0; i < triCount; i++) {
-                    var tri = DebugTriangles[i];
-                    vecs[i * 3 + 0] = tri.a;
-                    vecs[i * 3 + 1] = tri.b;
-                    vecs[i * 3 + 2] = tri.c;
-                    idxs[i * 3 + 0] = i * 3 + 0;
-                    idxs[i * 3 + 1] = i * 3 + 1;
-                    idxs[i * 3 + 2] = i * 3 + 2;
-
-                    colors[i * 3 + 0] = new Color(0, i * 1.0f / triCount, 0, 1);
-                    colors[i * 3 + 1] = new Color(0, i * 1.0f / triCount, 0, 1);
-                    colors[i * 3 + 2] = new Color(0, i * 1.0f / triCount, 0, 1);
-                }
-
-                try { 
-                
-                    debugMesh.vertices = vecs;
-                    debugMesh.colors = colors;
-                    debugMesh.triangles = idxs;
-                    debugMesh.RecalculateBounds();
-                }
-                catch (Exception e) {
-                    Console.WriteLine(e);
-                    throw;
-                }
-            }
+            ShowResult(graph);
+            ShowAllConnections(graph);
+            ShowProgress(graph);
+            //ShowAllTriangles(graph);
+            ShowOneTriangleConnections(graph);
         }
 
         lineRenderer.positionCount = pathPoints.Count;
         lineRenderer.widthMultiplier = widthMultiplier;
         lineRenderer.SetPositions(pathPoints.ToArray());
+    }
+
+    public int curTriIdx = 0;
+    private void ShowOneTriangleConnections(TriangleGraphPath graph){
+        var pathTris = new List<Triangle>();
+        var triangle = NavMesh._graph.GetTriangle(dstPoint.position);
+        curTriIdx = triangle.index;
+        foreach (var conn in triangle.connections) {
+            var borderTri = conn.GetToNode();
+            if (borderTri != null) {
+                pathTris.Add(borderTri);
+            }
+        }
+
+        ShowTriangles(allMesh, pathTris, Color.magenta);
+    }
+
+    private void ShowAllConnections(TriangleGraphPath graph){
+        var pathTris = new List<Triangle>();
+        var triangle = NavMesh._graph.GetTriangle(dstPoint.position);
+        HashSet<int> allTris = new HashSet<int>();
+        pathTris.Add(triangle);
+        allTris.Add(triangle.index);
+        Queue<Triangle> queue = new Queue<Triangle>();
+        queue.Enqueue(triangle);
+        while (queue.Count > 0) {
+            var tri = queue.Dequeue();
+            foreach (var conn in tri.connections) {
+                var borderTri = conn.GetToNode();
+                if (borderTri != null && allTris.Add(borderTri.index)) {
+                    queue.Enqueue(borderTri);
+                    pathTris.Add(borderTri);
+                }
+            }
+        }
+
+        ShowTriangles(allMesh, pathTris, Color.magenta);
+    }
+
+    private void ShowAllTriangles(TriangleGraphPath graph){
+        var pathTris = new List<Triangle>();
+        pathTris.Clear();
+        var nodes = NavMesh._graph._triangles;
+        foreach (var node in nodes) {
+            if (node != null
+                //&& node.category == IndexedAStarPathFinder<Triangle>.CLOSED
+            ) {
+                pathTris.Add(node);
+            }
+        }
+
+        ShowTriangles(progressMesh, pathTris, Color.yellow);
+    }
+
+    private void ShowProgress(TriangleGraphPath graph){
+        var pathTris = new List<Triangle>();
+        pathTris.Clear();
+        var nodes = NavMesh._pathFinder._nodeRecords;
+        foreach (var node in nodes) {
+            if (node != null
+                //&& node.category == IndexedAStarPathFinder<Triangle>.CLOSED
+            ) {
+                pathTris.Add(node.node);
+            }
+        }
+
+        ShowTriangles(progressMesh, pathTris, Color.yellow);
+    }
+
+    private void ShowResult(TriangleGraphPath graph){
+        var pathTris = new List<Triangle>();
+        pathTris.Clear();
+        foreach (var node in graph.nodes) {
+            pathTris.Add(node.GetFromNode());
+        }
+
+        pathTris.Add(graph.GetEndTriangle());
+        ShowTriangles(resultMesh, pathTris, Color.green);
+    }
+
+    private void ShowTriangles(MeshFilter filter, List<Triangle> tris, Color rawColor){
+        var triCount = tris.Count;
+        Mesh mesh = new Mesh();
+        if (tris.Count <= 1 || tris[0] == null) {
+            triCount = 0;
+            mesh.vertices = new Vector3[0];
+            mesh.colors = new Color[0];
+            mesh.triangles = new int[0];
+            mesh.RecalculateBounds();
+        }
+        else {
+            var colors = new Color[triCount * 3];
+            var vecs = new Vector3[triCount * 3];
+            var idxs = new int[triCount * 3];
+            for (int i = 0; i < triCount; i++) {
+                var tri = tris[i];
+                vecs[i * 3 + 0] = tri.a;
+                vecs[i * 3 + 1] = tri.b;
+                vecs[i * 3 + 2] = tri.c;
+                idxs[i * 3 + 0] = i * 3 + 0;
+                idxs[i * 3 + 1] = i * 3 + 1;
+                idxs[i * 3 + 2] = i * 3 + 2;
+                var color = rawColor * (i * 1.0f / triCount);
+                colors[i * 3 + 0] = color;
+                colors[i * 3 + 1] = color;
+                colors[i * 3 + 2] = color;
+            }
+
+            mesh.vertices = vecs;
+            mesh.colors = colors;
+            mesh.triangles = idxs;
+            mesh.RecalculateBounds();
+        }
+
+        filter.mesh = mesh;
     }
 }

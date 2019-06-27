@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using LitJson;
@@ -124,7 +125,7 @@ public class EditorNavMeshTool : UnityEditor.Editor {
         CheckInit();
         startTime = DateTime.Now;
         _map.SetActive(false);
-        
+
         //UnityEditor.AI.NavMeshBuilder.ClearAllNavMeshes();
         //UnityEditor.AI.NavMeshBuilder.BuildNavMesh();
         LogElapseTime("BuildNavMesh");
@@ -153,8 +154,8 @@ public class EditorNavMeshTool : UnityEditor.Editor {
         _property.endZ = maxZ;
         _property.width = maxX - minX;
         _property.height = maxZ - minZ;
-        
-        
+
+        MergeVertices();
         var strs = JsonMapper.ToJson(_property);
         LogElapseTime("Build str");
         string filename = path + _property.mapID + ".navmesh.json";
@@ -168,6 +169,100 @@ public class EditorNavMeshTool : UnityEditor.Editor {
         AssetDatabase.SaveAssets();
 
         ShowNavMesh(triangulatedNavMesh);
+    }
+
+    void MergeVertices(){
+        var rawCount = _property.pathVertices.Length;
+        double sqrMinGap = 0.05f * 0.05f;
+        var hashSet = new Dictionary<double, List<Vector3>>();
+        var rawVertices = _property.pathVertices;
+
+        double Hash31(Vector3 vec){
+            return ((long) (((double) vec.sqrMagnitude) / sqrMinGap) * sqrMinGap);
+        }
+
+        bool CanMerge(double hash, Vector3 vertex){
+            bool canMerge = false;
+            for (int j = -1; j <= 1; j++) {
+                var nearHash = hash + sqrMinGap * j;
+                if (hashSet.TryGetValue(nearHash, out var lst)) {
+                    foreach (var ver in lst) {
+                        if ((ver - vertex).sqrMagnitude < sqrMinGap) {
+                            canMerge = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (canMerge) break;
+            }
+
+            return canMerge;
+        }
+
+        for (int i = 0; i < rawVertices.Length; i++) {
+            var vertex = rawVertices[i];  
+            var hash = Hash31(vertex);
+            bool canMerge = CanMerge(hash, vertex);
+            if (!canMerge) {
+                if (hashSet.TryGetValue(hash, out var lst)) {
+                    lst.Add(vertex);
+                }
+                else {
+                    hashSet.Add(hash, new List<Vector3>() {vertex});
+                }
+            }
+        }
+
+        var newVertices = new List<Vector3>();
+        var pos2Idx = new Dictionary<Vector3, int>();
+        int posIds = 0;
+        foreach (var pair in hashSet) {
+            foreach (var vec in pair.Value) {
+                newVertices.Add(vec);
+                pos2Idx.Add(vec, posIds++);
+            }
+        }
+
+        _property.pathVertices = newVertices.ToArray();
+        var rawIdxs = _property.pathTriangles;
+        var newIdxs = new int[_property.pathTriangles.Length];
+        for (int i = 0; i < rawIdxs.Length; i++) {
+            var rawVertex = rawVertices[rawIdxs[i]];
+            var hash = Hash31(rawVertex);
+            bool merged = false;
+            for (int j = -1; j <= 1; j++) {
+                var nearHash = hash + sqrMinGap * j;
+                if (hashSet.TryGetValue(nearHash, out var lst)) {
+                    foreach (var ver in lst) {
+                        if ((ver - rawVertex).sqrMagnitude < sqrMinGap) {
+                            newIdxs[i] = pos2Idx[ver];
+                            merged = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (merged) break;
+            }
+
+            if (!merged) {
+                Debug.LogError($"hehe  can not find merge point" + rawVertex );
+            }
+        }
+        //check the same
+        for (int i = 0; i < rawIdxs.Length; i++) {
+            var rawPos = rawVertices[rawIdxs[i]];
+            var newPos = newVertices[newIdxs[i]];
+            if (rawPos != newPos) {
+                var diff = (rawPos - newPos).sqrMagnitude;
+                if (diff > 0.01f) {
+                    Debug.LogError("Miss match pos rawPos:{rawPos} newPos:{newPos} diff = " + diff);
+                }
+            }
+        }
+        
+        UnityEngine.Debug.Log($"MergeVertices {rawCount}->{_property.pathVertices.Length}");
     }
 
     private static void ShowNavMesh(NavMeshTriangulation triangulatedNavMesh){
