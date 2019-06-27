@@ -81,12 +81,7 @@ public class Triangle {
     }
 
 
-    /**
-     * 判断一个点是否在三角形内,二维判断
-     * <br> http://www.yalewoo.com/in_triangle_test.html
-     * @param vector3
-     */
-    public bool isInnerPoint(Vector3 point){
+    public bool IsInnerPoint(Vector3 point){
         bool res = pointInLineLeft(a, b, point);
         if (res != pointInLineLeft(b, c, point)) {
             return false;
@@ -95,11 +90,9 @@ public class Triangle {
         if (res != pointInLineLeft(c, a, point)) {
             return false;
         }
-
         if (cross2D(a, b, c) == 0) { //三点共线
             return false;
         }
-
         return true;
     }
 

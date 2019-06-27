@@ -6,7 +6,24 @@ using UnityEngine;
 using Object = UnityEngine.Object;
 
 
-public static class VectorExtention {
+public static class VectorExtention {    
+    public static Vector3 set(this Vector3 vec, float x, float y, float z){
+        vec.x = x;
+        vec.y = y;
+        vec.z = z;
+        return vec;
+    }
+    public static Vector3 set(this Vector3 vec, Vector3 val){
+        vec = val;
+        return vec;
+    }
+
+    public static Vector3 mulAdd(this Vector3 _this, Vector3 vec, float scalar){
+        _this.x += vec.x * scalar;
+        _this.y += vec.y * scalar;
+        _this.z += vec.z * scalar;
+        return _this;
+    }
     public static Vector3 Add(this Vector3 vec, Vector3 val){
         return vec + val;
     }
@@ -27,32 +44,16 @@ public static class VectorExtention {
         return Vector3.Dot(vec, new Vector3(x, y, z));
     }
 
-    public static Vector3 set(this Vector3 vec, Vector3 val){
-        vec = val;
-        return vec;
-    }
 
-    public static Vector3 mulAdd(this Vector3 _this, Vector3 vec, float scalar){
-        _this.x += vec.x * scalar;
-        _this.y += vec.y * scalar;
-        _this.z += vec.z * scalar;
-        return _this;
-    }
 
-    public static Vector3 set(this Vector3 vec, float x, float y, float z){
-        vec.x = x;
-        vec.y = y;
-        vec.z = z;
-        return vec;
-    }
 
     public static Vector3 cross(this Vector3 vec, Vector3 vector){
-        return vec.set(vec.y * vector.z - vec.z * vector.y, vec.z * vector.x - vec.x * vector.z,
+        return new Vector3(vec.y * vector.z - vec.z * vector.y, vec.z * vector.x - vec.x * vector.z,
             vec.x * vector.y - vec.y * vector.x);
     }
 
     public static Vector3 cross(this Vector3 vec, float x, float y, float z){
-        return vec.set(vec.y * z - vec.z * y, vec.z * x - vec.x * z, vec.x * y - vec.y * x);
+        return new Vector3(vec.y * z - vec.z * y, vec.z * x - vec.x * z, vec.x * y - vec.y * x);
     }
 
     public static Vector3 nor(this Vector3 vec){

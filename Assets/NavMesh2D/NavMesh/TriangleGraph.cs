@@ -17,10 +17,10 @@ public class TriangleGraph : IndexedGraph<Triangle> {
     public TriangleGraph(NavMeshData navMeshData, int scale){
         this._navMeshData = navMeshData;
         navMeshData.check(scale);
-        List<Triangle> pathTriangles = CreateTriangles(scale);
-        HashSet<IndexConnection> pathIndexConnections = GetIndexConnections(navMeshData.getPathTriangles());
+        var pathTriangles = CreateTriangles(scale);
+        var pathIndexConnections = GetIndexConnections(navMeshData.GetPathTriangles());
         _sharedEdges =
-            CreateSharedEdgesMap(pathIndexConnections, pathTriangles, navMeshData.getPathVertices().ToList());
+            CreateSharedEdgesMap(pathIndexConnections, pathTriangles, navMeshData.GetPathVertices());
         _isolatedEdgesMap = CreateIsolatedEdgesMap(_sharedEdges);
 
         // Count edges of different types
@@ -34,7 +34,7 @@ public class TriangleGraph : IndexedGraph<Triangle> {
 
         _numConnectedEdges /= 2;
         _numTotalEdges = _numConnectedEdges + _numDisconnectedEdges;
-        UnityEngine.Debug.LogError(
+        UnityEngine.Debug.Log(
             $"mapId{navMeshData.getMapID()} triangles{getTriangleCont()} totalEdges{_numTotalEdges} connEdges{_numConnectedEdges} disConnEdges{_numDisconnectedEdges}");
     }
 
@@ -55,10 +55,8 @@ public class TriangleGraph : IndexedGraph<Triangle> {
     }
 
     private List<Triangle> CreateTriangles(int scale){
-        int[] vertexIndexs = null; // 顶点
-        Vector3[] vertices = null; // 坐标
-        vertexIndexs = _navMeshData.getPathTriangles();
-        vertices = _navMeshData.getPathVertices();
+        var vertexIndexs = _navMeshData.GetPathTriangles();
+        var vertices = _navMeshData.GetPathVertices();
         int triangleIndex = 0; // 三角形下标
         int length = vertexIndexs.Length - 3;
         for (int i = 0; i <= length;) {
@@ -81,7 +79,7 @@ public class TriangleGraph : IndexedGraph<Triangle> {
     }
 
     private static HashSet<IndexConnection> GetIndexConnections(int[] indices){
-        HashSet<IndexConnection> indexConnections = new HashSet<IndexConnection>();
+        var indexConnections = new HashSet<IndexConnection>();
         int[] edge = {-1, -1};
         short i = 0;
         int j, a0, a1, a2, b0, b1, b2, triAIndex, triBIndex;
@@ -101,9 +99,9 @@ public class TriangleGraph : IndexedGraph<Triangle> {
                     continue;
                 }
 
-                if (hasSharedEdgeIndices(a0, a1, a2, b0, b1, b2, edge)) {
-                    IndexConnection indexConnection1 = new IndexConnection(edge[0], edge[1], triAIndex, triBIndex);
-                    IndexConnection indexConnection2 = new IndexConnection(edge[1], edge[0], triBIndex, triAIndex);
+                if (HasSharedEdgeIndices(a0, a1, a2, b0, b1, b2, edge)) {
+                    var indexConnection1 = new IndexConnection(edge[0], edge[1], triAIndex, triBIndex);
+                    var indexConnection2 = new IndexConnection(edge[1], edge[0], triBIndex, triAIndex);
                     indexConnections.Add(indexConnection1);
                     indexConnections.Add(indexConnection2);
                     edge[0] = -1;
@@ -114,30 +112,16 @@ public class TriangleGraph : IndexedGraph<Triangle> {
             }
         }
 
-        UnityEngine.Debug.LogError("连接个数：{indexConnections.Count}");
+        UnityEngine.Debug.Log($"连接个数：{indexConnections.Count}");
         return indexConnections;
     }
 
-    /**
-     * 检测是否有共享边 Checks if the two triangles have shared vertex indices. The edge
+    /** Checks if the two triangles have shared vertex indices. The edge
      * will always follow the vertex winding order of the triangle A. Since all
      * triangles have the same winding order, triangle A should have the opposite
      * edge direction to triangle B.
-     *
-     * @param a0
-     *            Vertex index on triangle A
-     * @param a1
-     * @param a2
-     * @param b0
-     *            Vertex index on triangle B
-     * @param b1
-     * @param b2
-     * @param edge
-     *            Output, the indices of the shared vertices in the winding order of
-     *            triangle A.
-     * @return True if the triangles share an edge.
      */
-    private static bool hasSharedEdgeIndices(int a0, int a1, int a2, int b0, int b1, int b2, int[] edge){
+    private static bool HasSharedEdgeIndices(int a0, int a1, int a2, int b0, int b1, int b2, int[] edge){
         bool match0 = (a0 == b0 || a0 == b1 || a0 == b2);
         bool match1 = (a1 == b0 || a1 == b1 || a1 == b2);
         if (!match0 && !match1) { // 无两个共享点
@@ -165,8 +149,7 @@ public class TriangleGraph : IndexedGraph<Triangle> {
     }
 
     private static Dictionary<Triangle, List<Connection<Triangle>>> CreateSharedEdgesMap(
-        HashSet<IndexConnection> indexConnections,
-        List<Triangle> triangles, List<Vector3> vertexVectors){
+        HashSet<IndexConnection> indexConnections, List<Triangle> triangles, Vector3[] vertexVectors){
         var connectionMap = new Dictionary<Triangle, List<Connection<Triangle>>>();
 
         foreach (Triangle tri in triangles) {
@@ -176,14 +159,13 @@ public class TriangleGraph : IndexedGraph<Triangle> {
         foreach (IndexConnection indexConnection in indexConnections) {
             var fromNode = triangles.get(indexConnection.fromTriIndex);
             var toNode = triangles.get(indexConnection.toTriIndex);
-            var edgeVertexA = vertexVectors.get(indexConnection.edgeVertexIndex1);
-            var edgeVertexB = vertexVectors.get(indexConnection.edgeVertexIndex2);
+            var edgeVertexA = vertexVectors[indexConnection.edgeVertexIndex1];
+            var edgeVertexB = vertexVectors[indexConnection.edgeVertexIndex2];
 
             var edge = new TriangleEdge(fromNode, toNode, edgeVertexA, edgeVertexB);
             connectionMap.get(fromNode).Add(edge);
             fromNode.connections.Add(edge);
-            // UnityEngine.Debug.LogError("三角形：{} -->{}
-            // {}-->{}",fromNode.getIndex(),toNode.getIndex(),fromNode.ToString(),toNode.ToString());
+            UnityEngine.Debug.LogFormat($"Triangle：{fromNode.getIndex()} -->{toNode.getIndex()} {fromNode}-->{toNode}");
         }
 
         return connectionMap;
@@ -261,14 +243,17 @@ public class TriangleGraph : IndexedGraph<Triangle> {
 
     public Triangle GetTriangle(Vector3 point){
         //TODO space partition bsp
-        var optional = _triangles.Where(t => t.isInnerPoint(point)).First();
-        return optional;
+        foreach (var triangle in _triangles) {
+            if (triangle.IsInnerPoint(point)) {
+                return triangle;
+            }
+        }
+        return null;
     }
 
     private static Dictionary<Triangle, List<Connection<Triangle>>> CreateIsolatedEdgesMap(
         Dictionary<Triangle, List<Connection<Triangle>>> connectionMap){
-        Dictionary<Triangle, List<Connection<Triangle>>> disconnectionMap =
-            new Dictionary<Triangle, List<Connection<Triangle>>>();
+        var disconnectionMap = new Dictionary<Triangle, List<Connection<Triangle>>>();
 
         foreach (Triangle tri in connectionMap.Keys) {
             var connectedEdges = connectionMap.get(tri);

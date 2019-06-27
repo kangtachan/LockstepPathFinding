@@ -81,7 +81,7 @@ public class NavMeshData {
     }
 
 
-    public int[] getPathTriangles() {
+    public int[] GetPathTriangles() {
         return pathTriangles;
     }
 
@@ -89,7 +89,7 @@ public class NavMeshData {
         this.pathTriangles = pathTriangles;
     }
 
-    public Vector3[] getPathVertices() {
+    public Vector3[] GetPathVertices() {
         return pathVertices;
     }
 
