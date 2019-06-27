@@ -5,7 +5,7 @@ using System.Linq;
 using Lockstep.Math;
 
 namespace Lockstep.AI.PathFinding {
-    public static class VectorExtention {
+    public static class VectorExtension {
         public static LVector3 set(this LVector3 vec, LFloat x, LFloat y, LFloat z){
             vec.x = x;
             vec.y = y;
