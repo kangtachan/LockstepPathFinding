@@ -1,8 +1,7 @@
 
 
-
+namespace NoLockstep.AI.Navmesh2D {
 /** 
- * 消耗计算接口
  * <br>
  * A {@code Heuristic} generates estimates of the cost to move from a given node to the goal.
  * <p>
@@ -14,11 +13,12 @@
  * @param <N> Type of node
  * 
  * @author davebaol */
-public interface Heuristic<N> {
+	public interface Heuristic<N> {
 
-	/** Calculates an estimated cost to reach the goal node from the given node.
-	 * @param node the start node
-	 * @param endNode the end node
-	 * @return the estimated cost */
-	float Estimate (N node, N endNode);
+		/** Calculates an estimated cost to reach the goal node from the given node.
+		 * @param node the start node
+		 * @param endNode the end node
+		 * @return the estimated cost */
+		float Estimate(N node, N endNode);
+	}
 }

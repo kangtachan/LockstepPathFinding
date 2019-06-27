@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using Lockstep.Math;
+using NoLockstep.AI.Navmesh2D;
 using UnityEngine.Profiling;
 using UnityEngine.SceneManagement;
 using Debug = Lockstep.Logging.Debug;

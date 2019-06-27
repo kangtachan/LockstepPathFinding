@@ -3,11 +3,11 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using LitJson;
+using NoLockstep.AI.Navmesh2D;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine.AI;
-using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 [CustomEditor(typeof(NavMeshTool))]

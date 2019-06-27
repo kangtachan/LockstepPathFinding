@@ -20,14 +20,16 @@ using UnityEngine;
 
 using System.Collections.Generic;
 
-public interface Graph<N> {
+namespace NoLockstep.AI.Navmesh2D {
+	public interface Graph<N> {
 
-	/**和当前节点相连的连接关系
-	 * Returns the connections outgoing from the given node.
-	 * 
-	 * @param fromNode
-	 *            the node whose outgoing connections will be returned
-	 * @return the array of connections outgoing from the given node.
-	 */
-	List<Connection<N>> GetConnections(N fromNode);
+		/**和当前节点相连的连接关系
+		 * Returns the connections outgoing from the given node.
+		 * 
+		 * @param fromNode
+		 *            the node whose outgoing connections will be returned
+		 * @return the array of connections outgoing from the given node.
+		 */
+		List<Connection<N>> GetConnections(N fromNode);
+	}
 }

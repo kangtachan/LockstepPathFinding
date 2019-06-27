@@ -2,308 +2,310 @@ using System;
 using System.Collections.Generic;
 using UnityEngine;
 
-public enum PlaneSide {
-    OnPlane,
-    Back,
-    Front
-}
+namespace NoLockstep.AI.Navmesh2D {
+    public enum PlaneSide {
+        OnPlane,
+        Back,
+        Front
+    }
 
 /**
  * A point where an edge on the navmesh is crossed.
  */
-public class TrianglePointPath {
-    public static Vector3 V3_UP = Vector3.up;
-    public static Vector3 V3_DOWN = Vector3.down;
+    public class TrianglePointPath {
+        public static Vector3 V3_UP = Vector3.up;
+        public static Vector3 V3_DOWN = Vector3.down;
 
-    private Plane crossingPlane = new Plane(); // 横跨平面
-    private static Vector3 tmp1 = new Vector3();
-    private static Vector3 tmp2 = new Vector3();
-    private List<Connection<Triangle>> nodes; // 路径连接点
-    private Vector3 start; // 起点
-    private Vector3 end; // 终点
-    private Triangle startTri; // 起始三角形
-    private EdgePoint lastPointAdded; // 最后一个边点
-    private List<Vector3> vectors = new List<Vector3>(); // 路径坐标点
-    private List<EdgePoint> pathPoints = new List<EdgePoint>();
-    private TriangleEdge lastEdge; // 最后一个边
+        private Plane crossingPlane = new Plane(); // 横跨平面
+        private static Vector3 tmp1 = new Vector3();
+        private static Vector3 tmp2 = new Vector3();
+        private List<Connection<Triangle>> nodes; // 路径连接点
+        private Vector3 start; // 起点
+        private Vector3 end; // 终点
+        private Triangle startTri; // 起始三角形
+        private EdgePoint lastPointAdded; // 最后一个边点
+        private List<Vector3> vectors = new List<Vector3>(); // 路径坐标点
+        private List<EdgePoint> pathPoints = new List<EdgePoint>();
+        private TriangleEdge lastEdge; // 最后一个边
 
- 
 
-    public void CalculateForGraphPath(TriangleGraphPath trianglePath, bool calculateCrossPoint){
-        Clear();
-        nodes = trianglePath.nodes;
-        start = trianglePath.start;
-        end = trianglePath.end;
-        startTri = trianglePath.startTri;
+        public void CalculateForGraphPath(TriangleGraphPath trianglePath, bool calculateCrossPoint){
+            Clear();
+            nodes = trianglePath.nodes;
+            start = trianglePath.start;
+            end = trianglePath.end;
+            startTri = trianglePath.startTri;
 
-        // Check that the start point is actually inside the start triangle, if not,
-        // project it to the closest
-        // triangle edge. Otherwise the funnel calculation might generate spurious path
-        // segments.
-        Ray ray = new Ray(V3_UP.scl(1000).Add(start), V3_DOWN); // 起始坐标从上向下的射线
-        if (!GeometryUtil.IntersectRayTriangle(ray, startTri.a, startTri.b, startTri.c, out var ss)) {
-            float minDst = float.MaxValue;
-            Vector3 projection = new Vector3(); // 规划坐标
-            Vector3 newStart = new Vector3(); // 新坐标
-            float dst;
-            // A-B
-            if ((dst = GeometryUtil.nearestSegmentPointSquareDistance(projection, startTri.a, startTri.b,
-                    start)) < minDst) {
-                minDst = dst;
-                newStart.set(projection);
-            }
-
-            // B-C
-            if ((dst = GeometryUtil.nearestSegmentPointSquareDistance(projection, startTri.b, startTri.c,
-                    start)) < minDst) {
-                minDst = dst;
-                newStart.set(projection);
-            }
-
-            // C-A
-            if ((dst = GeometryUtil.nearestSegmentPointSquareDistance(projection, startTri.c, startTri.a,
-                    start)) < minDst) {
-                minDst = dst;
-                newStart.set(projection);
-            }
-
-            start.set(newStart);
-        }
-
-        if (nodes.Count == 0) { // 起点终点在同一三角形中
-            addPoint(start, startTri);
-            addPoint(end, startTri);
-        }
-        else {
-            lastEdge = new TriangleEdge(nodes.get(nodes.Count - 1).GetToNode(), nodes.get(nodes.Count - 1).GetToNode(),
-                end,
-                end);
-            CalculateEdgePoints(calculateCrossPoint);
-        }
-    }
-
-    public void Clear(){
-        vectors.Clear();
-        pathPoints.Clear();
-        startTri = null;
-        lastPointAdded = null;
-        lastEdge = null;
-    }
-    private TriangleEdge getEdge(int index){
-        return (TriangleEdge) ((index == nodes.Count) ? lastEdge : nodes[index]);
-    }
-
-    private int numEdges(){
-        return nodes.Count + 1;
-    }
-    public Vector3 getVector(int index){
-        return vectors.get(index);
-    }
-
-    public int getSize(){
-        return vectors.Count;
-    }
-
-    /** All vectors in the path     */
-    public List<Vector3> getVectors(){
-        return vectors;
-    }
-
-    /** The triangle which must be crossed to reach the next path point.*/
-    public Triangle getToTriangle(int index){
-        return pathPoints.get(index).toNode;
-    }
-
-    /** The triangle from which must be crossed to reach this point. */
-    public Triangle getFromTriangle(int index){
-        return pathPoints.get(index).fromNode;
-    }
-
-    /** The navmesh edge(s) crossed at this path point.     */
-    public List<TriangleEdge> getCrossedEdges(int index){
-        return pathPoints.get(index).connectingEdges;
-    }
-    private void addPoint(Vector3 point, Triangle toNode){
-        addPoint(new EdgePoint(point, toNode));
-    }
-
-    private void addPoint(EdgePoint edgePoint){
-        vectors.Add(edgePoint.point);
-        pathPoints.Add(edgePoint);
-        lastPointAdded = edgePoint;
-    }
-
-    /**
-     * Calculate the shortest
-     * point path through the path triangles, using the Simple Stupid Funnel
-     * Algorithm.
-     *
-     * @return
-     */
-    private void CalculateEdgePoints(bool calculateCrossPoint){
-        TriangleEdge edge = getEdge(0);
-        addPoint(start, edge.fromNode);
-        lastPointAdded.fromNode = edge.fromNode;
-
-        Funnel funnel = new Funnel();
-        funnel.pivot = (start); // 起点为漏斗点
-        funnel.setPlanes(funnel.pivot, edge); // 设置第一对平面
-
-        int leftIndex = 0; // 左顶点索引
-        int rightIndex = 0; // 右顶点索引
-        int lastRestart = 0;
-
-        for (int i = 1; i < numEdges(); ++i) {
-            edge = getEdge(i); // 下一条边
-
-            var leftPlaneLeftDP = funnel.sideLeftPlane(edge.leftVertex);
-            var leftPlaneRightDP = funnel.sideLeftPlane(edge.rightVertex);
-            var rightPlaneLeftDP = funnel.sideRightPlane(edge.leftVertex);
-            var rightPlaneRightDP = funnel.sideRightPlane(edge.rightVertex);
-
-            // 右顶点在右平面里面
-            if (rightPlaneRightDP != PlaneSide.Front) {
-                // 右顶点在左平面里面
-                if (leftPlaneRightDP != PlaneSide.Front) {
-                    // Tighten the funnel. 缩小漏斗
-                    funnel.setRightPlane(funnel.pivot, edge.rightVertex);
-                    rightIndex = i;
+            // Check that the start point is actually inside the start triangle, if not,
+            // project it to the closest
+            // triangle edge. Otherwise the funnel calculation might generate spurious path
+            // segments.
+            Ray ray = new Ray(V3_UP.scl(1000).Add(start), V3_DOWN); // 起始坐标从上向下的射线
+            if (!GeometryUtil.IntersectRayTriangle(ray, startTri.a, startTri.b, startTri.c, out var ss)) {
+                float minDst = float.MaxValue;
+                Vector3 projection = new Vector3(); // 规划坐标
+                Vector3 newStart = new Vector3(); // 新坐标
+                float dst;
+                // A-B
+                if ((dst = GeometryUtil.nearestSegmentPointSquareDistance(projection, startTri.a, startTri.b,
+                        start)) < minDst) {
+                    minDst = dst;
+                    newStart.set(projection);
                 }
-                else {
-                    // Right over left, insert left to path and restart scan from portal left point.
-                    // 右顶点在左平面外面，设置左顶点为漏斗顶点和路径点，从新已该漏斗开始扫描
-                    if (calculateCrossPoint) {
-                        CalculateEdgeCrossings(lastRestart, leftIndex, funnel.pivot, funnel.leftPortal);
+
+                // B-C
+                if ((dst = GeometryUtil.nearestSegmentPointSquareDistance(projection, startTri.b, startTri.c,
+                        start)) < minDst) {
+                    minDst = dst;
+                    newStart.set(projection);
+                }
+
+                // C-A
+                if ((dst = GeometryUtil.nearestSegmentPointSquareDistance(projection, startTri.c, startTri.a,
+                        start)) < minDst) {
+                    minDst = dst;
+                    newStart.set(projection);
+                }
+
+                start.set(newStart);
+            }
+
+            if (nodes.Count == 0) { // 起点终点在同一三角形中
+                addPoint(start, startTri);
+                addPoint(end, startTri);
+            }
+            else {
+                lastEdge = new TriangleEdge(nodes.get(nodes.Count - 1).GetToNode(),
+                    nodes.get(nodes.Count - 1).GetToNode(),
+                    end,
+                    end);
+                CalculateEdgePoints(calculateCrossPoint);
+            }
+        }
+
+        public void Clear(){
+            vectors.Clear();
+            pathPoints.Clear();
+            startTri = null;
+            lastPointAdded = null;
+            lastEdge = null;
+        }
+
+        private TriangleEdge getEdge(int index){
+            return (TriangleEdge) ((index == nodes.Count) ? lastEdge : nodes[index]);
+        }
+
+        private int numEdges(){
+            return nodes.Count + 1;
+        }
+
+        public Vector3 getVector(int index){
+            return vectors.get(index);
+        }
+
+        public int getSize(){
+            return vectors.Count;
+        }
+
+        /** All vectors in the path     */
+        public List<Vector3> getVectors(){
+            return vectors;
+        }
+
+        /** The triangle which must be crossed to reach the next path point.*/
+        public Triangle getToTriangle(int index){
+            return pathPoints.get(index).toNode;
+        }
+
+        /** The triangle from which must be crossed to reach this point. */
+        public Triangle getFromTriangle(int index){
+            return pathPoints.get(index).fromNode;
+        }
+
+        /** The navmesh edge(s) crossed at this path point.     */
+        public List<TriangleEdge> getCrossedEdges(int index){
+            return pathPoints.get(index).connectingEdges;
+        }
+
+        private void addPoint(Vector3 point, Triangle toNode){
+            addPoint(new EdgePoint(point, toNode));
+        }
+
+        private void addPoint(EdgePoint edgePoint){
+            vectors.Add(edgePoint.point);
+            pathPoints.Add(edgePoint);
+            lastPointAdded = edgePoint;
+        }
+
+        /**
+         * Calculate the shortest
+         * point path through the path triangles, using the Simple Stupid Funnel
+         * Algorithm.
+         *
+         * @return
+         */
+        private void CalculateEdgePoints(bool calculateCrossPoint){
+            TriangleEdge edge = getEdge(0);
+            addPoint(start, edge.fromNode);
+            lastPointAdded.fromNode = edge.fromNode;
+
+            Funnel funnel = new Funnel();
+            funnel.pivot = (start); // 起点为漏斗点
+            funnel.setPlanes(funnel.pivot, edge); // 设置第一对平面
+
+            int leftIndex = 0; // 左顶点索引
+            int rightIndex = 0; // 右顶点索引
+            int lastRestart = 0;
+
+            for (int i = 1; i < numEdges(); ++i) {
+                edge = getEdge(i); // 下一条边
+
+                var leftPlaneLeftDP = funnel.sideLeftPlane(edge.leftVertex);
+                var leftPlaneRightDP = funnel.sideLeftPlane(edge.rightVertex);
+                var rightPlaneLeftDP = funnel.sideRightPlane(edge.leftVertex);
+                var rightPlaneRightDP = funnel.sideRightPlane(edge.rightVertex);
+
+                // 右顶点在右平面里面
+                if (rightPlaneRightDP != PlaneSide.Front) {
+                    // 右顶点在左平面里面
+                    if (leftPlaneRightDP != PlaneSide.Front) {
+                        // Tighten the funnel. 缩小漏斗
+                        funnel.setRightPlane(funnel.pivot, edge.rightVertex);
+                        rightIndex = i;
                     }
                     else {
-                        vectors.Add(funnel.leftPortal);
+                        // Right over left, insert left to path and restart scan from portal left point.
+                        // 右顶点在左平面外面，设置左顶点为漏斗顶点和路径点，从新已该漏斗开始扫描
+                        if (calculateCrossPoint) {
+                            CalculateEdgeCrossings(lastRestart, leftIndex, funnel.pivot, funnel.leftPortal);
+                        }
+                        else {
+                            vectors.Add(funnel.leftPortal);
+                        }
+
+                        funnel.pivot = (funnel.leftPortal);
+                        i = leftIndex;
+                        rightIndex = i;
+                        if (i < numEdges() - 1) {
+                            lastRestart = i;
+                            funnel.setPlanes(funnel.pivot, getEdge(i + 1));
+                            continue;
+                        }
+
+                        break;
                     }
-
-                    funnel.pivot = (funnel.leftPortal);
-                    i = leftIndex;
-                    rightIndex = i;
-                    if (i < numEdges() - 1) {
-                        lastRestart = i;
-                        funnel.setPlanes(funnel.pivot, getEdge(i + 1));
-                        continue;
-                    }
-
-                    break;
                 }
-            }
 
-            // 左顶点在左平面里面
-            if (leftPlaneLeftDP != PlaneSide.Front) {
-                // 左顶点在右平面里面
-                if (rightPlaneLeftDP != PlaneSide.Front) {
-                    // Tighten the funnel.
-                    funnel.setLeftPlane(funnel.pivot, edge.leftVertex);
-                    leftIndex = i;
-                }
-                else {
-                    // Left over right, insert right to path and restart scan from portal right
-                    // point.
-                    if (calculateCrossPoint) {
-                        CalculateEdgeCrossings(lastRestart, rightIndex, funnel.pivot, funnel.rightPortal);
+                // 左顶点在左平面里面
+                if (leftPlaneLeftDP != PlaneSide.Front) {
+                    // 左顶点在右平面里面
+                    if (rightPlaneLeftDP != PlaneSide.Front) {
+                        // Tighten the funnel.
+                        funnel.setLeftPlane(funnel.pivot, edge.leftVertex);
+                        leftIndex = i;
                     }
                     else {
-                        vectors.Add(funnel.rightPortal);
-                    }
+                        // Left over right, insert right to path and restart scan from portal right
+                        // point.
+                        if (calculateCrossPoint) {
+                            CalculateEdgeCrossings(lastRestart, rightIndex, funnel.pivot, funnel.rightPortal);
+                        }
+                        else {
+                            vectors.Add(funnel.rightPortal);
+                        }
 
-                    funnel.pivot = (funnel.rightPortal);
-                    i = rightIndex;
-                    leftIndex = i;
-                    if (i < numEdges() - 1) {
-                        lastRestart = i;
-                        funnel.setPlanes(funnel.pivot, getEdge(i + 1));
-                        continue;
-                    }
+                        funnel.pivot = (funnel.rightPortal);
+                        i = rightIndex;
+                        leftIndex = i;
+                        if (i < numEdges() - 1) {
+                            lastRestart = i;
+                            funnel.setPlanes(funnel.pivot, getEdge(i + 1));
+                            continue;
+                        }
 
-                    break;
+                        break;
+                    }
                 }
             }
-        }
 
-        if (calculateCrossPoint) {
-            CalculateEdgeCrossings(lastRestart, numEdges() - 1, funnel.pivot, end);
-        }
-        else {
-            vectors.Add(end);
-        }
+            if (calculateCrossPoint) {
+                CalculateEdgeCrossings(lastRestart, numEdges() - 1, funnel.pivot, end);
+            }
+            else {
+                vectors.Add(end);
+            }
 
-        for (int i = 1; i < pathPoints.Count; i++) {
-            EdgePoint p = pathPoints.get(i);
-            p.fromNode = pathPoints.get(i - 1).toNode;
-        }
+            for (int i = 1; i < pathPoints.Count; i++) {
+                EdgePoint p = pathPoints.get(i);
+                p.fromNode = pathPoints.get(i - 1).toNode;
+            }
 
-        return;
-    }
-
-    /**
-     * Store all edge crossing points between the start and end indices. If the path
-     * crosses exactly the start or end points (which is quite likely), store the
-     * edges in order of crossing in the EdgePoint data structure.
-     * <p/>
-     * Edge crossings are calculated as intersections with the plane from the start,
-     * end and up vectors.
-     */
-    private void CalculateEdgeCrossings(int startIndex, int endIndex, Vector3 startPoint, Vector3 endPoint){
-        if (startIndex >= numEdges() || endIndex >= numEdges()) {
             return;
         }
 
-        crossingPlane.set(startPoint, tmp1.set(startPoint).Add(V3_UP), endPoint);
+        /**
+         * Store all edge crossing points between the start and end indices. If the path
+         * crosses exactly the start or end points (which is quite likely), store the
+         * edges in order of crossing in the EdgePoint data structure.
+         * <p/>
+         * Edge crossings are calculated as intersections with the plane from the start,
+         * end and up vectors.
+         */
+        private void CalculateEdgeCrossings(int startIndex, int endIndex, Vector3 startPoint, Vector3 endPoint){
+            if (startIndex >= numEdges() || endIndex >= numEdges()) {
+                return;
+            }
 
-        EdgePoint previousLast = lastPointAdded;
+            crossingPlane.set(startPoint, tmp1.set(startPoint).Add(V3_UP), endPoint);
 
-        var edge = getEdge(endIndex);
-        EdgePoint end = new EdgePoint(endPoint, edge.toNode);
+            EdgePoint previousLast = lastPointAdded;
 
-        for (int i = startIndex; i < endIndex; i++) {
-            edge = getEdge(i);
+            var edge = getEdge(endIndex);
+            EdgePoint end = new EdgePoint(endPoint, edge.toNode);
 
-            if (edge.rightVertex.Equals(startPoint) || edge.leftVertex.Equals(startPoint)) {
-                previousLast.toNode = edge.toNode;
-                if (!previousLast.connectingEdges.Contains(edge)) {
-                    previousLast.connectingEdges.Add(edge);
+            for (int i = startIndex; i < endIndex; i++) {
+                edge = getEdge(i);
+
+                if (edge.rightVertex.Equals(startPoint) || edge.leftVertex.Equals(startPoint)) {
+                    previousLast.toNode = edge.toNode;
+                    if (!previousLast.connectingEdges.Contains(edge)) {
+                        previousLast.connectingEdges.Add(edge);
+                    }
+                }
+                else if (edge.leftVertex.Equals(endPoint) || edge.rightVertex.Equals(endPoint)) {
+                    if (!end.connectingEdges.Contains(edge)) {
+                        end.connectingEdges.Add(edge);
+                    }
+                }
+                else if (IntersectSegmentPlane(edge.leftVertex, edge.rightVertex, crossingPlane, tmp1)
+                         && !float.IsNaN(tmp1.x + tmp1.y + tmp1.z)) {
+                    if (i != startIndex || i == 0) {
+                        lastPointAdded.toNode = edge.fromNode;
+                        EdgePoint crossing = new EdgePoint(tmp1, edge.toNode);
+                        crossing.connectingEdges.Add(edge);
+                        addPoint(crossing);
+                    }
                 }
             }
-            else if (edge.leftVertex.Equals(endPoint) || edge.rightVertex.Equals(endPoint)) {
-                if (!end.connectingEdges.Contains(edge)) {
-                    end.connectingEdges.Add(edge);
-                }
+
+            if (endIndex < numEdges() - 1) {
+                end.connectingEdges.Add(getEdge(endIndex));
             }
-            else if (IntersectSegmentPlane(edge.leftVertex, edge.rightVertex, crossingPlane, tmp1)
-                     && !float.IsNaN(tmp1.x + tmp1.y + tmp1.z)) {
-                if (i != startIndex || i == 0) {
-                    lastPointAdded.toNode = edge.fromNode;
-                    EdgePoint crossing = new EdgePoint(tmp1, edge.toNode);
-                    crossing.connectingEdges.Add(edge);
-                    addPoint(crossing);
-                }
+
+            if (!lastPointAdded.Equals(end)) {
+                addPoint(end);
             }
         }
 
-        if (endIndex < numEdges() - 1) {
-            end.connectingEdges.Add(getEdge(endIndex));
-        }
+        public static bool IntersectSegmentPlane(Vector3 start, Vector3 end, Plane plane, Vector3 intersection){
+            Vector3 dir = end.sub(start);
+            float denom = dir.dot(plane.getNormal());
+            float t = -(start.dot(plane.getNormal()) + plane.getD()) / denom;
+            if (t < 0 || t > 1)
+                return false;
 
-        if (!lastPointAdded.Equals(end)) {
-            addPoint(end);
+            intersection.set(start).Add(dir.scl(t));
+            return true;
         }
     }
-
-    public static bool IntersectSegmentPlane(Vector3 start, Vector3 end, Plane plane, Vector3 intersection){
-        Vector3 dir = end.sub(start);
-        float denom = dir.dot(plane.getNormal());
-        float t = -(start.dot(plane.getNormal()) + plane.getD()) / denom;
-        if (t < 0 || t > 1)
-            return false;
-
-        intersection.set(start).Add(dir.scl(t));
-        return true;
-    }
-
-
-
 }
