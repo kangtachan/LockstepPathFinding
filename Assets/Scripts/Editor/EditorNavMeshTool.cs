@@ -72,6 +72,7 @@ public class EditorNavMeshTool : UnityEditor.Editor {
     /// 创建测试地图大小
     /// </summary>
     void CreateMapTestMesh(){
+        CheckInit();
         _map.SetActive(true);
         GameObject UnWalkAble = CreateOb("MapTest", 0, new Mesh());
         Mesh UnWalkMesh = UnWalkAble.GetComponent<MeshFilter>().sharedMesh;
@@ -173,21 +174,21 @@ public class EditorNavMeshTool : UnityEditor.Editor {
 
     void MergeVertices(){
         var rawCount = _property.pathVertices.Length;
-        double sqrMinGap = 0.05f * 0.05f;
+        double minGap = 0.05f;
         var hashSet = new Dictionary<double, List<Vector3>>();
         var rawVertices = _property.pathVertices;
 
         double Hash31(Vector3 vec){
-            return ((long) (((double) vec.sqrMagnitude) / sqrMinGap) * sqrMinGap);
+            return ((long) (((double) vec.sqrMagnitude) / minGap) * minGap);
         }
 
         bool CanMerge(double hash, Vector3 vertex){
             bool canMerge = false;
             for (int j = -1; j <= 1; j++) {
-                var nearHash = hash + sqrMinGap * j;
+                var nearHash = hash + minGap * j;
                 if (hashSet.TryGetValue(nearHash, out var lst)) {
                     foreach (var ver in lst) {
-                        if ((ver - vertex).sqrMagnitude < sqrMinGap) {
+                        if ((ver - vertex).sqrMagnitude < minGap) {
                             canMerge = true;
                             break;
                         }
@@ -232,10 +233,10 @@ public class EditorNavMeshTool : UnityEditor.Editor {
             var hash = Hash31(rawVertex);
             bool merged = false;
             for (int j = -1; j <= 1; j++) {
-                var nearHash = hash + sqrMinGap * j;
+                var nearHash = hash + minGap * j;
                 if (hashSet.TryGetValue(nearHash, out var lst)) {
                     foreach (var ver in lst) {
-                        if ((ver - rawVertex).sqrMagnitude < sqrMinGap) {
+                        if ((ver - rawVertex).magnitude < minGap) {
                             newIdxs[i] = pos2Idx[ver];
                             merged = true;
                             break;
@@ -261,7 +262,8 @@ public class EditorNavMeshTool : UnityEditor.Editor {
                 }
             }
         }
-        
+
+        _property.pathTriangles = newIdxs;
         UnityEngine.Debug.Log($"MergeVertices {rawCount}->{_property.pathVertices.Length}");
     }
 

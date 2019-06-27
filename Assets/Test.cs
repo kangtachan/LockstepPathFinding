@@ -15,9 +15,16 @@ public class Test : MonoBehaviour {
     public LineRenderer lineRenderer;
 
     public List<Vector3> pathPoints = new List<Vector3>();
-    public bool isDrawLine = false;
+    public bool isFindPath = false;
 
     public TriangleNavMesh NavMesh;
+
+
+    public bool isShowSingleTriangleConnection;
+    public bool isShowTriangleArea;
+    public bool isShowAllTriangles;
+    public bool isShowPathResult;
+    public bool isShowPathProgress;
 
     void CheckInit(){
         if (NavMesh != null) {
@@ -57,7 +64,7 @@ public class Test : MonoBehaviour {
     public float useTime;
 
     void DrawLine(){
-        if (isDrawLine) {
+        if (isFindPath) {
             Profiler.BeginSample(" FindPath");
             var time = DateTime.Now;
             pathPoints = NavMesh.FindPath(srcPoint.position, dstPoint.position, path);
@@ -68,11 +75,11 @@ public class Test : MonoBehaviour {
 
         var graph = NavMesh.navMeshGraphPath;
         if (graph != null) {
-            ShowResult(graph);
-            ShowAllConnections(graph);
-            ShowProgress(graph);
-            //ShowAllTriangles(graph);
-            ShowOneTriangleConnections(graph);
+            if (isShowPathResult) ShowResult(graph);
+            if (isShowPathProgress) ShowProgress(graph);
+            if (isShowAllTriangles) ShowAllTriangles(graph);
+            if (isShowTriangleArea) ShowAllConnections(graph);
+            if (isShowSingleTriangleConnection) ShowOneTriangleConnections(graph);
         }
 
         lineRenderer.positionCount = pathPoints.Count;
@@ -81,6 +88,7 @@ public class Test : MonoBehaviour {
     }
 
     public int curTriIdx = 0;
+
     private void ShowOneTriangleConnections(TriangleGraphPath graph){
         var pathTris = new List<Triangle>();
         var triangle = NavMesh._graph.GetTriangle(dstPoint.position);

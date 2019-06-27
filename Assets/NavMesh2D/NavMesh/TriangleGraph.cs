@@ -64,16 +64,24 @@ public class TriangleGraph : IndexedGraph<Triangle> {
             int aIndex = vertexIndexs[i++];
             int bIndex = vertexIndexs[i++];
             int cIndex = vertexIndexs[i++];
-            Triangle triangle = null;
-            if (scale != 1) {
-                triangle = new Triangle(vertices[aIndex], vertices[bIndex], vertices[cIndex], triangleIndex++, aIndex,
-                    bIndex, cIndex);
+            try {  
+                Triangle triangle = null;
+                if (scale != 1) {
+                    triangle = new Triangle(vertices[aIndex], vertices[bIndex], vertices[cIndex], triangleIndex++, aIndex,
+                        bIndex, cIndex);
+                }
+                else {
+                    triangle = new Triangle(vertices[aIndex], vertices[bIndex], vertices[cIndex], triangleIndex++);
+                }
+                
+                _triangles.Add(triangle);
             }
-            else {
-                triangle = new Triangle(vertices[aIndex], vertices[bIndex], vertices[cIndex], triangleIndex++);
+            catch (Exception e) {
+                Console.WriteLine(e);
+                throw;
             }
+           
 
-            _triangles.Add(triangle);
         }
 
         return _triangles;
@@ -95,12 +103,6 @@ public class TriangleGraph : IndexedGraph<Triangle> {
                 b0 = indices[j++];
                 b1 = indices[j++];
                 b2 = indices[j++];
-                if (triAIndex == 221) {
-                    int ss = 0;
-                    if (triBIndex == 374) {
-                        int sge = 0;
-                    }
-                }
 
                 if (HasSharedEdgeIndices(a0, a1, a2, b0, b1, b2, edge)) {
                     var indexConnection1 = new IndexConnection(edge[0], edge[1], triAIndex, triBIndex);
