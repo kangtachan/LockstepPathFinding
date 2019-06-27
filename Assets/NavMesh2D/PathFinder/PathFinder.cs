@@ -1,4 +1,4 @@
-namespace NoLockstep.AI.Navmesh2D {
+namespace Lockstep.AI.PathFinding {
 	public interface PathFinder<N> {
 
 		bool SearchPath(N startNode, N endNode, Heuristic<N> heuristic, GraphPath<Connection<N>> outPath);

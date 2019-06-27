@@ -6,19 +6,19 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
 using Lockstep.Serialization;
-using UnityEngine;
+using Lockstep.Math;
 
-namespace NoLockstep.AI.Navmesh2D {
+namespace Lockstep.AI.PathFinding {
 /** @author Nathan Sweet */
 	public class Node {
-		public float value; //节点排序比较值
+		public LFloat value; //节点排序比较值
 		public int index; //节点索引
 
-		public Node(float value){
+		public Node(LFloat value){
 			this.value = value;
 		}
 
-		public float GetValue(){
+		public LFloat GetValue(){
 			return value;
 		}
 
@@ -58,7 +58,7 @@ namespace NoLockstep.AI.Navmesh2D {
 			return node;
 		}
 
-		public T Add(T node, float value){
+		public T Add(T node, LFloat value){
 			node.value = value;
 			return Add(node);
 		}
@@ -95,8 +95,8 @@ namespace NoLockstep.AI.Navmesh2D {
 			size = 0;
 		}
 
-		public void SetValue(T node, float value){
-			float oldValue = node.value;
+		public void SetValue(T node, LFloat value){
+			LFloat oldValue = node.value;
 			node.value = value;
 			if ((value < oldValue) ^ _isMaxHeap)
 				Up(node.index);
@@ -107,7 +107,7 @@ namespace NoLockstep.AI.Navmesh2D {
 		private void Up(int index){
 			Node[] nodes = this._nodes;
 			Node node = nodes[index];
-			float value = node.value;
+			LFloat value = node.value;
 			while (index > 0) {
 				int parentIndex = (index - 1) >> 1;
 				Node parent = nodes[parentIndex];
@@ -123,13 +123,13 @@ namespace NoLockstep.AI.Navmesh2D {
 			nodes[index] = node;
 			node.index = index;
 		}
-
+		public static readonly LFloat MinValue = new LFloat(true,int.MinValue);
 		private void Down(int index){
 			Node[] nodes = this._nodes;
 			int size = this.size;
 
 			Node node = nodes[index];
-			float value = node.value;
+			LFloat value = node.value;
 
 			while (true) {
 				int leftIndex = 1 + (index << 1);
@@ -138,15 +138,15 @@ namespace NoLockstep.AI.Navmesh2D {
 
 				// Always have a left child.
 				Node leftNode = nodes[leftIndex];
-				float leftValue = leftNode.value;
+				LFloat leftValue = leftNode.value;
 
 				// May have a right child.
 				int rightIndex = leftIndex + 1;
 				Node rightNode;
-				float rightValue;
+				LFloat rightValue;
 				if (rightIndex >= size) {
 					rightNode = null;
-					rightValue = _isMaxHeap ? float.MinValue : float.MaxValue;
+					rightValue = _isMaxHeap ? LFloat.MinValue : LFloat.MaxValue;
 				}
 				else {
 					rightNode = nodes[rightIndex];
@@ -183,8 +183,8 @@ namespace NoLockstep.AI.Navmesh2D {
 			return h;
 		}
 
-		int FloatToIntBits(float value){
-			ConverterHelperFloat ch = new ConverterHelperFloat {Afloat = value};
+		int FloatToIntBits(LFloat value){
+			ConverterHelperFloat ch = new ConverterHelperFloat {ALFloat = value};
 			return ch.Aint;
 		}
 
@@ -192,7 +192,7 @@ namespace NoLockstep.AI.Navmesh2D {
 		private struct ConverterHelperFloat {
 			[FieldOffset(0)] public int Aint;
 
-			[FieldOffset(0)] public float Afloat;
+			[FieldOffset(0)] public LFloat ALFloat;
 		}
 
 		public override String ToString(){

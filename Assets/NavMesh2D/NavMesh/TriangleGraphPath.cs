@@ -1,18 +1,18 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using Lockstep.Math;
 
-namespace NoLockstep.AI.Navmesh2D {
+namespace Lockstep.AI.PathFinding {
 	public class TriangleGraphPath : DefaultGraphPath<Connection<Triangle>> {
 		/**
 		 * The start point when generating a point path for this triangle path
 		 */
-		public Vector3 start;
+		public LVector3 start;
 
 		/**
 		 * The end point when generating a point path for this triangle path
 		 */
-		public Vector3 end;
+		public LVector3 end;
 
 		/**
 		 * If the triangle path is empty, the point path will span this triangle

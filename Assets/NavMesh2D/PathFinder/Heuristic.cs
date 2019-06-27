@@ -1,6 +1,8 @@
 
 
-namespace NoLockstep.AI.Navmesh2D {
+using Lockstep.Math;
+
+namespace Lockstep.AI.PathFinding {
 /** 
  * <br>
  * A {@code Heuristic} generates estimates of the cost to move from a given node to the goal.
@@ -19,6 +21,6 @@ namespace NoLockstep.AI.Navmesh2D {
 		 * @param node the start node
 		 * @param endNode the end node
 		 * @return the estimated cost */
-		float Estimate(N node, N endNode);
+		LFloat Estimate(N node, N endNode);
 	}
 }

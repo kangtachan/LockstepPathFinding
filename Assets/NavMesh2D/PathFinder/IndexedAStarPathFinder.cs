@@ -1,6 +1,8 @@
 using System;
+using Lockstep.Logging;
+using Lockstep.Math;
 
-namespace NoLockstep.AI.Navmesh2D {
+namespace Lockstep.AI.PathFinding {
     public class IndexedAStarPathFinder<N> : PathFinder<N> {
         private IndexedGraph<N> _graph;
         public NodeRecord<N>[] _nodeRecords;
@@ -28,12 +30,12 @@ namespace NoLockstep.AI.Navmesh2D {
 
         public bool SearchPath(N startNode, N endNode, Heuristic<N> heuristic, GraphPath<Connection<N>> outPath){
             if (startNode == null) {
-                UnityEngine.Debug.LogError("起点坐标不在寻路层中");
+                Debug.LogError("起点坐标不在寻路层中");
                 return false;
             }
 
             if (endNode == null) {
-                UnityEngine.Debug.LogError("终点坐标不在寻路层中");
+                Debug.LogError("终点坐标不在寻路层中");
                 return false;
             }
 
@@ -92,7 +94,7 @@ namespace NoLockstep.AI.Navmesh2D {
             NodeRecord<N> startRecord = GetNodeRecord(startNode);
             startRecord.node = startNode;
             startRecord.connection = null;
-            startRecord.costSoFar = 0;
+            startRecord.costSoFar = 0.ToLFloat();
             AddToOpenList(startRecord, heuristic.Estimate(startNode, endNode));
 
             _current = null;
@@ -110,9 +112,9 @@ namespace NoLockstep.AI.Navmesh2D {
 
                 // Get the cost estimate for the node
                 N node = connection.GetToNode(); //周围目标节点
-                float nodeCost = _current.costSoFar + connection.GetCost(); //节点到目标的消耗
+                LFloat nodeCost = _current.costSoFar + connection.GetCost(); //节点到目标的消耗
 
-                float nodeHeuristic;
+                LFloat nodeHeuristic;
                 NodeRecord<N> nodeRecord = GetNodeRecord(node);
                 if (nodeRecord.category == CLOSED) { // The node is closed
 
@@ -177,7 +179,7 @@ namespace NoLockstep.AI.Navmesh2D {
             outPath.reverse();
         }
 
-        protected void AddToOpenList(NodeRecord<N> nodeRecord, float estimatedTotalCost){
+        protected void AddToOpenList(NodeRecord<N> nodeRecord, LFloat estimatedTotalCost){
             _openList.Add(nodeRecord, estimatedTotalCost);
             nodeRecord.category = OPEN;
             if (metrics != null) {
@@ -212,7 +214,7 @@ namespace NoLockstep.AI.Navmesh2D {
             public Connection<N> connection;
 
             /** The actual cost from the start node. */
-            public float costSoFar;
+            public LFloat costSoFar;
 
             /** The node category: {@link #UNVISITED}, {@link #OPEN} or {@link #CLOSED}. */
             public int category;
@@ -221,10 +223,10 @@ namespace NoLockstep.AI.Navmesh2D {
             public int searchId;
 
             /** Creates a {@code NodeRecord}. */
-            public NodeRecord() : base(0){ }
+            public NodeRecord() : base(LFloat.zero){ }
 
             /** Returns the estimated total cost. */
-            public float GetEstimatedTotalCost(){
+            public LFloat GetEstimatedTotalCost(){
                 return value;
             }
         }

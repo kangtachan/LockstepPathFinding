@@ -1,33 +1,33 @@
 
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using Lockstep.Math;
 
-namespace NoLockstep.AI.Navmesh2D {
+namespace Lockstep.AI.PathFinding {
 	public abstract class NavMesh {
 
 		/** 地图宽x轴 */
-		protected float width;
+		protected LFloat width;
 
 		/** 地图高y轴 */
-		protected float height;
+		protected LFloat height;
 
 		/** 配置id */
 		protected int mapId;
 
-		public float getWidth(){
+		public LFloat getWidth(){
 			return width;
 		}
 
-		public void setWidth(float width){
+		public void setWidth(LFloat width){
 			this.width = width;
 		}
 
-		public float getHeight(){
+		public LFloat getHeight(){
 			return height;
 		}
 
-		public void setHeight(float height){
+		public void setHeight(LFloat height){
 			this.height = height;
 		}
 

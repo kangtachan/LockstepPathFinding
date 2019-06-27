@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 using LitJson;
-using NoLockstep.AI.Navmesh2D;
+using Lockstep.Math;
+using Lockstep.AI.PathFinding;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -19,8 +21,8 @@ public class EditorNavMeshTool : UnityEditor.Editor {
     public override void OnInspectorGUI(){
         base.OnInspectorGUI();
         _property = (target as NavMeshTool)?.data;
-        EditorGUILayout.FloatField("地图宽度", _property.endX - _property.startX);
-        EditorGUILayout.FloatField("地图高度", _property.endZ - _property.startZ);
+        EditorGUILayoutExt.FloatField("地图宽度", _property.endX - _property.startX);
+        EditorGUILayoutExt.FloatField("地图高度", _property.endZ - _property.startZ);
         if (GUILayout.Button("测试地图大小")) {
             CreateMapTestMesh();
         }
@@ -77,10 +79,10 @@ public class EditorNavMeshTool : UnityEditor.Editor {
         GameObject UnWalkAble = CreateOb("MapTest", 0, new Mesh());
         Mesh UnWalkMesh = UnWalkAble.GetComponent<MeshFilter>().sharedMesh;
         UnWalkMesh.vertices = new Vector3[] {
-            new Vector3(_property.startX, 0, _property.startZ),
-            new Vector3(_property.startX, 0, _property.endZ + _property.startZ),
-            new Vector3(_property.endX + _property.startX, 0, _property.endZ + _property.startZ),
-            new Vector3(_property.endX + _property.startX, 0, _property.startZ)
+            new LVector3(_property.startX, LFloat.zero, _property.startZ).ToVector3(),
+            new LVector3(_property.startX, LFloat.zero, _property.endZ + _property.startZ).ToVector3(),
+            new LVector3(_property.endX + _property.startX, LFloat.zero, _property.endZ + _property.startZ).ToVector3(),
+            new LVector3(_property.endX + _property.startX, LFloat.zero, _property.startZ).ToVector3()
         };
         UnWalkMesh.triangles = new int[] {0, 1, 2, 0, 2, 3};
     }
@@ -136,8 +138,6 @@ public class EditorNavMeshTool : UnityEditor.Editor {
         }
 
         var triangulatedNavMesh = UnityEngine.AI.NavMesh.CalculateTriangulation();
-        _property.pathVertices = triangulatedNavMesh.vertices;
-        _property.pathTriangles = triangulatedNavMesh.indices;
         float minX = float.MaxValue;
         float maxX = float.MinValue;
         float minZ = float.MaxValue;
@@ -149,14 +149,15 @@ public class EditorNavMeshTool : UnityEditor.Editor {
             if (vertex.z < minZ) minZ = vertex.z;
         }
 
-        _property.startX = minX;
-        _property.startZ = minZ;
-        _property.endX = maxX;
-        _property.endZ = maxZ;
-        _property.width = maxX - minX;
-        _property.height = maxZ - minZ;
+        _property.pathTriangles = triangulatedNavMesh.indices;
+        _property.startX = minX.ToLFloat();
+        _property.startZ = minZ.ToLFloat();
+        _property.endX = maxX.ToLFloat();
+        _property.endZ = maxZ.ToLFloat();
+        _property.width  = (maxX - minX).ToLFloat();
+        _property.height = (maxZ - minZ).ToLFloat();
 
-        MergeVertices();
+        MergeVertices(triangulatedNavMesh.vertices);
         var strs = JsonMapper.ToJson(_property);
         LogElapseTime("Build str");
         string filename = path + _property.mapID + ".navmesh.json";
@@ -172,11 +173,11 @@ public class EditorNavMeshTool : UnityEditor.Editor {
         ShowNavMesh(triangulatedNavMesh);
     }
 
-    void MergeVertices(){
-        var rawCount = _property.pathVertices.Length;
+    void MergeVertices(Vector3[] pathVertices){
+        var rawCount = pathVertices.Length;
         double minGap = 0.05f;
         var hashSet = new Dictionary<double, List<Vector3>>();
-        var rawVertices = _property.pathVertices;
+        var rawVertices = pathVertices;
 
         double Hash31(Vector3 vec){
             return ((long) (((double) vec.sqrMagnitude) / minGap) * minGap);
@@ -225,7 +226,7 @@ public class EditorNavMeshTool : UnityEditor.Editor {
             }
         }
 
-        _property.pathVertices = newVertices.ToArray();
+        _property.pathVertices = newVertices.ToArray().ToLVecArray();
         var rawIdxs = _property.pathTriangles;
         var newIdxs = new int[_property.pathTriangles.Length];
         for (int i = 0; i < rawIdxs.Length; i++) {

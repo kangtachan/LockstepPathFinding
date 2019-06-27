@@ -1,7 +1,6 @@
 using System.Collections.Generic;
-using UnityEngine;
-
-namespace NoLockstep.AI.Navmesh2D {
+using Lockstep.Math;
+namespace Lockstep.AI.PathFinding {
 	public class EdgePoint {
 		/**
 		 * Triangle which must be crossed to reach the next path point.
@@ -22,9 +21,9 @@ namespace NoLockstep.AI.Navmesh2D {
 		/**
 		 * The point where the path crosses an edge.
 		 */
-		public Vector3 point;
+		public LVector3 point;
 
-		public EdgePoint(Vector3 point, Triangle toNode){
+		public EdgePoint(LVector3 point, Triangle toNode){
 			this.point = point;
 			this.toNode = toNode;
 		}

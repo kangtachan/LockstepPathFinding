@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using Lockstep.Math;
 
-namespace NoLockstep.AI.Navmesh2D {
+namespace Lockstep.AI.PathFinding {
 	public interface Connection<N> {
 
 		/** Returns the non-negative cost of this connection */
-		float GetCost();
+		LFloat GetCost();
 
 		/** Returns the node that this connection came from */
 		N GetFromNode();

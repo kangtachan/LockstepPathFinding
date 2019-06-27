@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using LitJson;
-using UnityEngine;
+using Lockstep.Math;
 using Debug = Lockstep.Logging.Debug;
 
-namespace NoLockstep.AI.Navmesh2D {
+namespace Lockstep.AI.PathFinding {
     public class TriangleNavMesh : NavMesh {
         public TriangleGraph _graph;
         private TriangleHeuristic _heuristic;
@@ -22,7 +22,7 @@ namespace NoLockstep.AI.Navmesh2D {
 
         public TriangleGraphPath navMeshGraphPath = null;
 
-        public List<Vector3> FindPath(Vector3 fromPoint, Vector3 toPoint, TrianglePointPath navMeshPointPath){
+        public List<LVector3> FindPath(LVector3 fromPoint, LVector3 toPoint, TrianglePointPath navMeshPointPath){
             navMeshGraphPath = new TriangleGraphPath();
             bool find = FindPath(fromPoint, toPoint, navMeshGraphPath);
             if (!find) {
@@ -33,7 +33,7 @@ namespace NoLockstep.AI.Navmesh2D {
             return navMeshPointPath.getVectors();
         }
 
-        private bool FindPath(Vector3 fromPoint, Vector3 toPoint, TriangleGraphPath path){
+        private bool FindPath(LVector3 fromPoint, LVector3 toPoint, TriangleGraphPath path){
             path.Clear();
             Triangle fromTriangle = GetTriangle(fromPoint);
             var toTriangle = GetTriangle(toPoint);
@@ -60,7 +60,7 @@ namespace NoLockstep.AI.Navmesh2D {
         }
 
 
-        public Triangle GetTriangle(Vector3 point){
+        public Triangle GetTriangle(LVector3 point){
             return _graph.GetTriangle(point);
         }
     }

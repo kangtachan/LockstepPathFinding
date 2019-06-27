@@ -1,7 +1,7 @@
 
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using Lockstep.Math;
 
 
 
@@ -17,11 +17,11 @@ using UnityEngine;
 using System;
 using System.Text;
 
-namespace NoLockstep.AI.Navmesh2D {
+namespace Lockstep.AI.PathFinding {
 	public class TriangleEdge : Connection<Triangle> {
 		/** 右顶点 */
-		public Vector3 rightVertex;
-		public Vector3 leftVertex;
+		public LVector3 rightVertex;
+		public LVector3 leftVertex;
 
 		/** 源三角形 */
 		public Triangle fromNode;
@@ -29,17 +29,17 @@ namespace NoLockstep.AI.Navmesh2D {
 		/** 指向的三角形 */
 		public Triangle toNode;
 
-		public TriangleEdge(Vector3 rightVertex, Vector3 leftVertex) : this(null, null, rightVertex, leftVertex){ }
+		public TriangleEdge(LVector3 rightVertex, LVector3 leftVertex) : this(null, null, rightVertex, leftVertex){ }
 
-		public TriangleEdge(Triangle fromNode, Triangle toNode, Vector3 rightVertex, Vector3 leftVertex){
+		public TriangleEdge(Triangle fromNode, Triangle toNode, LVector3 rightVertex, LVector3 leftVertex){
 			this.fromNode = fromNode;
 			this.toNode = toNode;
 			this.rightVertex = rightVertex;
 			this.leftVertex = leftVertex;
 		}
 
-		public float GetCost(){
-			return 1;
+		public LFloat GetCost(){
+			return LFloat.one;
 		}
 
 		public Triangle GetFromNode(){

@@ -2,7 +2,7 @@
 
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using Lockstep.Math;
 
 
 
@@ -20,7 +20,7 @@ using UnityEngine;
 
 using System.Collections.Generic;
 
-namespace NoLockstep.AI.Navmesh2D {
+namespace Lockstep.AI.PathFinding {
 	public interface Graph<N> {
 
 		/**和当前节点相连的连接关系

@@ -1,9 +1,9 @@
 
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using Lockstep.Math;
 
-namespace NoLockstep.AI.Navmesh2D {
+namespace Lockstep.AI.PathFinding {
 
 	public interface GraphPath<N> {
 

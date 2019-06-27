@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
 using Lockstep.Math;
-using NoLockstep.AI.Navmesh2D;
+using Lockstep.AI.PathFinding;
 using UnityEngine.Profiling;
 using UnityEngine.SceneManagement;
 using Debug = Lockstep.Logging.Debug;
@@ -15,7 +15,7 @@ public class Test : MonoBehaviour {
 
     public LineRenderer lineRenderer;
 
-    public List<Vector3> pathPoints = new List<Vector3>();
+    public List<LVector3> pathPoints = new List<LVector3>();
     public bool isFindPath = false;
 
     public TriangleNavMesh NavMesh;
@@ -68,7 +68,7 @@ public class Test : MonoBehaviour {
         if (isFindPath) {
             Profiler.BeginSample(" FindPath");
             var time = DateTime.Now;
-            pathPoints = NavMesh.FindPath(srcPoint.position, dstPoint.position, path);
+            pathPoints = NavMesh.FindPath(srcPoint.position.ToLVector3(), dstPoint.position.ToLVector3(), path);
             useTime = (float) (DateTime.Now - time).TotalMilliseconds;
             Profiler.EndSample();
             //isDrawLine = false;
@@ -85,14 +85,15 @@ public class Test : MonoBehaviour {
 
         lineRenderer.positionCount = pathPoints.Count;
         lineRenderer.widthMultiplier = widthMultiplier;
-        lineRenderer.SetPositions(pathPoints.ToArray());
+        lineRenderer.SetPositions(pathPoints.ToArray().ToVecArray());
     }
+
 
     public int curTriIdx = 0;
 
     private void ShowOneTriangleConnections(TriangleGraphPath graph){
         var pathTris = new List<Triangle>();
-        var triangle = NavMesh._graph.GetTriangle(dstPoint.position);
+        var triangle = NavMesh._graph.GetTriangle(dstPoint.position.ToLVector3());
         curTriIdx = triangle.index;
         foreach (var conn in triangle.connections) {
             var borderTri = conn.GetToNode();
@@ -106,7 +107,7 @@ public class Test : MonoBehaviour {
 
     private void ShowAllConnections(TriangleGraphPath graph){
         var pathTris = new List<Triangle>();
-        var triangle = NavMesh._graph.GetTriangle(dstPoint.position);
+        var triangle = NavMesh._graph.GetTriangle(dstPoint.position.ToLVector3());
         HashSet<int> allTris = new HashSet<int>();
         pathTris.Add(triangle);
         allTris.Add(triangle.index);
@@ -183,9 +184,9 @@ public class Test : MonoBehaviour {
             var idxs = new int[triCount * 3];
             for (int i = 0; i < triCount; i++) {
                 var tri = tris[i];
-                vecs[i * 3 + 0] = tri.a;
-                vecs[i * 3 + 1] = tri.b;
-                vecs[i * 3 + 2] = tri.c;
+                vecs[i * 3 + 0] = tri.a.ToVector3();
+                vecs[i * 3 + 1] = tri.b.ToVector3();
+                vecs[i * 3 + 2] = tri.c.ToVector3();
                 idxs[i * 3 + 0] = i * 3 + 0;
                 idxs[i * 3 + 1] = i * 3 + 1;
                 idxs[i * 3 + 2] = i * 3 + 2;

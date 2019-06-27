@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using Lockstep.Math;
 
-namespace NoLockstep.AI.Navmesh2D {
+namespace Lockstep.AI.PathFinding {
     public enum PlaneSide {
         OnPlane,
         Back,
@@ -13,18 +13,18 @@ namespace NoLockstep.AI.Navmesh2D {
  * A point where an edge on the navmesh is crossed.
  */
     public class TrianglePointPath {
-        public static Vector3 V3_UP = Vector3.up;
-        public static Vector3 V3_DOWN = Vector3.down;
+        public static LVector3 V3_UP = LVector3.up;
+        public static LVector3 V3_DOWN = LVector3.down;
 
         private Plane crossingPlane = new Plane(); // 横跨平面
-        private static Vector3 tmp1 = new Vector3();
-        private static Vector3 tmp2 = new Vector3();
+        private static LVector3 tmp1 = new LVector3();
+        private static LVector3 tmp2 = new LVector3();
         private List<Connection<Triangle>> nodes; // 路径连接点
-        private Vector3 start; // 起点
-        private Vector3 end; // 终点
+        private LVector3 start; // 起点
+        private LVector3 end; // 终点
         private Triangle startTri; // 起始三角形
         private EdgePoint lastPointAdded; // 最后一个边点
-        private List<Vector3> vectors = new List<Vector3>(); // 路径坐标点
+        private List<LVector3> vectors = new List<LVector3>(); // 路径坐标点
         private List<EdgePoint> pathPoints = new List<EdgePoint>();
         private TriangleEdge lastEdge; // 最后一个边
 
@@ -40,12 +40,12 @@ namespace NoLockstep.AI.Navmesh2D {
             // project it to the closest
             // triangle edge. Otherwise the funnel calculation might generate spurious path
             // segments.
-            Ray ray = new Ray(V3_UP.scl(1000).Add(start), V3_DOWN); // 起始坐标从上向下的射线
+            Ray ray = new Ray((V3_UP.scl(1000.ToLFloat())).Add(start), V3_DOWN); // 起始坐标从上向下的射线
             if (!GeometryUtil.IntersectRayTriangle(ray, startTri.a, startTri.b, startTri.c, out var ss)) {
-                float minDst = float.MaxValue;
-                Vector3 projection = new Vector3(); // 规划坐标
-                Vector3 newStart = new Vector3(); // 新坐标
-                float dst;
+                LFloat minDst = LFloat.MaxValue;
+                LVector3 projection = new LVector3(); // 规划坐标
+                LVector3 newStart = new LVector3(); // 新坐标
+                LFloat dst;
                 // A-B
                 if ((dst = GeometryUtil.nearestSegmentPointSquareDistance(projection, startTri.a, startTri.b,
                         start)) < minDst) {
@@ -99,7 +99,7 @@ namespace NoLockstep.AI.Navmesh2D {
             return nodes.Count + 1;
         }
 
-        public Vector3 getVector(int index){
+        public LVector3 getVector(int index){
             return vectors.get(index);
         }
 
@@ -108,7 +108,7 @@ namespace NoLockstep.AI.Navmesh2D {
         }
 
         /** All vectors in the path     */
-        public List<Vector3> getVectors(){
+        public List<LVector3> getVectors(){
             return vectors;
         }
 
@@ -127,7 +127,7 @@ namespace NoLockstep.AI.Navmesh2D {
             return pathPoints.get(index).connectingEdges;
         }
 
-        private void addPoint(Vector3 point, Triangle toNode){
+        private void addPoint(LVector3 point, Triangle toNode){
             addPoint(new EdgePoint(point, toNode));
         }
 
@@ -251,7 +251,7 @@ namespace NoLockstep.AI.Navmesh2D {
          * Edge crossings are calculated as intersections with the plane from the start,
          * end and up vectors.
          */
-        private void CalculateEdgeCrossings(int startIndex, int endIndex, Vector3 startPoint, Vector3 endPoint){
+        private void CalculateEdgeCrossings(int startIndex, int endIndex, LVector3 startPoint, LVector3 endPoint){
             if (startIndex >= numEdges() || endIndex >= numEdges()) {
                 return;
             }
@@ -277,8 +277,7 @@ namespace NoLockstep.AI.Navmesh2D {
                         end.connectingEdges.Add(edge);
                     }
                 }
-                else if (IntersectSegmentPlane(edge.leftVertex, edge.rightVertex, crossingPlane, tmp1)
-                         && !float.IsNaN(tmp1.x + tmp1.y + tmp1.z)) {
+                else if (IntersectSegmentPlane(edge.leftVertex, edge.rightVertex, crossingPlane, tmp1)) {
                     if (i != startIndex || i == 0) {
                         lastPointAdded.toNode = edge.fromNode;
                         EdgePoint crossing = new EdgePoint(tmp1, edge.toNode);
@@ -297,10 +296,10 @@ namespace NoLockstep.AI.Navmesh2D {
             }
         }
 
-        public static bool IntersectSegmentPlane(Vector3 start, Vector3 end, Plane plane, Vector3 intersection){
-            Vector3 dir = end.sub(start);
-            float denom = dir.dot(plane.getNormal());
-            float t = -(start.dot(plane.getNormal()) + plane.getD()) / denom;
+        public static bool IntersectSegmentPlane(LVector3 start, LVector3 end, Plane plane, LVector3 intersection){
+            LVector3 dir = end.sub(start);
+            LFloat denom = dir.dot(plane.getNormal());
+            LFloat t = -(start.dot(plane.getNormal()) + plane.getD()) / denom;
             if (t < 0 || t > 1)
                 return false;
 

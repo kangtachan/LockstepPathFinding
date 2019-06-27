@@ -1,7 +1,7 @@
 ﻿using System;
 using UnityEngine;
 using System.Collections;
-using NoLockstep.AI.Navmesh2D;
+using Lockstep.AI.PathFinding;
 
 [Serializable]
 public class NavMeshTool : MonoBehaviour {

@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using UnityEngine;
-using UnityEngine.Profiling;
+using Lockstep.Logging;
+using Lockstep.Math;
 
-namespace NoLockstep.AI.Navmesh2D {
+namespace Lockstep.AI.PathFinding {
     public class TriangleGraph : IndexedGraph<Triangle> {
         private NavMeshData _navMeshData;
         public List<Triangle> _triangles = new List<Triangle>();
@@ -36,7 +36,7 @@ namespace NoLockstep.AI.Navmesh2D {
 
             _numConnectedEdges /= 2;
             _numTotalEdges = _numConnectedEdges + _numDisconnectedEdges;
-            UnityEngine.Debug.Log(
+            Debug.Log(
                 $"mapId{navMeshData.getMapID()} triangles{getTriangleCont()} totalEdges{_numTotalEdges} connEdges{_numConnectedEdges} disConnEdges{_numDisconnectedEdges}");
         }
 
@@ -113,13 +113,13 @@ namespace NoLockstep.AI.Navmesh2D {
                         indexConnections.Add(indexConnection2);
                         edge[0] = -1;
                         edge[1] = -1;
-                        // UnityEngine.Debug.LogError("共享边：{} ->
+                        // Debug.LogError("共享边：{} ->
                         // {}",indexConnection1.ToString(),indexConnection2.ToString());
                     }
                 }
             }
 
-            UnityEngine.Debug.Log($"连接个数：{indexConnections.Count}");
+            Debug.Log($"连接个数：{indexConnections.Count}");
             return indexConnections;
         }
 
@@ -156,7 +156,7 @@ namespace NoLockstep.AI.Navmesh2D {
         }
 
         private static Dictionary<Triangle, List<Connection<Triangle>>> CreateSharedEdgesMap(
-            HashSet<IndexConnection> indexConnections, List<Triangle> triangles, Vector3[] vertexVectors){
+            HashSet<IndexConnection> indexConnections, List<Triangle> triangles, LVector3[] vertexVectors){
             var connectionMap = new Dictionary<Triangle, List<Connection<Triangle>>>();
 
             foreach (Triangle tri in triangles) {
@@ -172,8 +172,7 @@ namespace NoLockstep.AI.Navmesh2D {
                 var edge = new TriangleEdge(fromNode, toNode, edgeVertexA, edgeVertexB);
                 connectionMap.get(fromNode).Add(edge);
                 fromNode.connections.Add(edge);
-                UnityEngine.Debug.LogFormat(
-                    $"Triangle：{fromNode.getIndex()} -->{toNode.getIndex()} {fromNode}-->{toNode}");
+                Debug.LogFormat( $"Triangle：{fromNode.getIndex()} -->{toNode.getIndex()} {fromNode}-->{toNode}");
             }
 
             return connectionMap;
@@ -246,15 +245,15 @@ namespace NoLockstep.AI.Navmesh2D {
             return _triangles;
         }
 
-        public Triangle GetTriangle(Vector3 point){
+        public Triangle GetTriangle(LVector3 point){
             //TODO space partition bsp
-            Profiler.BeginSample("_GetTriangle");
+            //Profiler.BeginSample("_GetTriangle");
             var ret = _GetTriangle(point);
-            Profiler.EndSample();
+            //Profiler.EndSample();
             return ret;
         }
 
-        private Triangle _GetTriangle(Vector3 point){
+        private Triangle _GetTriangle(LVector3 point){
             foreach (var triangle in _triangles) {
                 if (triangle.IsInnerPoint(point)) {
                     return triangle;
@@ -299,7 +298,7 @@ namespace NoLockstep.AI.Navmesh2D {
 
                 int totalEdges = (connectedEdges.Count + disconnectedEdges.Count);
                 if (totalEdges != 3) {
-                    UnityEngine.Debug.LogError("Wrong number of edges (" + totalEdges + ") in triangle " +
+                    Debug.LogError("Wrong number of edges (" + totalEdges + ") in triangle " +
                                                tri.getIndex());
                 }
             }

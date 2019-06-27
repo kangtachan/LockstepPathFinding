@@ -1,17 +1,17 @@
 using System;
-using UnityEngine;
+using Lockstep.Math;
 
-namespace NoLockstep.AI.Navmesh2D {
+namespace Lockstep.AI.PathFinding {
     public class GeometryUtil {
-        public static float FLOAT_ROUNDING_ERROR = 0.000001f;
+        public static LFloat FLOAT_ROUNDING_ERROR = new LFloat(true,1);
 
-        private static Vector3 TMP_VEC_1 = new Vector3();
-        private static Vector3 TMP_VEC_2 = new Vector3();
-        private static Vector3 TMP_VEC_3 = new Vector3();
+        private static LVector3 TMP_VEC_1 = new LVector3();
+        private static LVector3 TMP_VEC_2 = new LVector3();
+        private static LVector3 TMP_VEC_3 = new LVector3();
 
         /** Projects a point to a line segment. This implementation is thread-safe.	 */
-        public static float nearestSegmentPointSquareDistance
-            (Vector3 nearest, Vector3 start, Vector3 end, Vector3 point){
+        public static LFloat nearestSegmentPointSquareDistance
+            (LVector3 nearest, LVector3 start, LVector3 end, LVector3 point){
             nearest.set(start);
             var abX = end.x - start.x;
             var abY = end.y - start.y;
@@ -19,7 +19,7 @@ namespace NoLockstep.AI.Navmesh2D {
             var abLen2 = abX * abX + abY * abY + abZ * abZ;
             if (abLen2 > 0) { // Avoid NaN due to the indeterminate form 0/0
                 var t = ((point.x - start.x) * abX + (point.y - start.y) * abY + (point.z - start.z) * abZ) / abLen2;
-                var s = Mathf.Clamp(t, 0, 1);
+                var s = LMath.Clamp01(t);
                 nearest.x += abX * s;
                 nearest.y += abY * s;
                 nearest.z += abZ * s;
@@ -35,14 +35,14 @@ namespace NoLockstep.AI.Navmesh2D {
          * <p>
          * This implementation is NOT thread-safe.
          */
-        public static float getClosestPointOnTriangle(Vector3 a, Vector3 b, Vector3 c, Vector3 p, ref Vector3 _out){
+        public static LFloat getClosestPointOnTriangle(LVector3 a, LVector3 b, LVector3 c, LVector3 p, ref LVector3 _out){
             // Check if P in vertex region outside A
             var ab = b.sub(a);
             var ac = c.sub(a);
             var ap = p.sub(a);
             var d1 = ab.dot(ap);
             var d2 = ac.dot(ap);
-            if (d1 <= 0.0f && d2 <= 0.0f) {
+            if (d1 <= 0 && d2 <= 0) {
                 _out = a;
                 return p.dst2(a);
             }
@@ -51,14 +51,14 @@ namespace NoLockstep.AI.Navmesh2D {
             var bp = p.sub(b);
             var d3 = ab.dot(bp);
             var d4 = ac.dot(bp);
-            if (d3 >= 0.0f && d4 <= d3) {
+            if (d3 >= 0 && d4 <= d3) {
                 _out = b;
                 return p.dst2(b);
             }
 
             // Check if P in edge region of AB, if so return projection of P onto AB
             var vc = d1 * d4 - d3 * d2;
-            if (vc <= 0.0f && d1 >= 0.0f && d3 <= 0.0f) {
+            if (vc <= 0 && d1 >= 0 && d3 <= 0) {
                 var v = d1 / (d1 - d3);
                 _out.set(a).mulAdd(ab, v); // barycentric coordinates (1-v,v,0)
                 return p.dst2(_out);
@@ -68,14 +68,14 @@ namespace NoLockstep.AI.Navmesh2D {
             var cp = p.sub(c);
             var d5 = ab.dot(cp);
             var d6 = ac.dot(cp);
-            if (d6 >= 0.0f && d5 <= d6) {
+            if (d6 >= 0 && d5 <= d6) {
                 _out = c;
                 return p.dst2(c);
             }
 
             // Check if P in edge region of AC, if so return projection of P onto AC
             var vb = d5 * d2 - d1 * d6;
-            if (vb <= 0.0f && d2 >= 0.0f && d6 <= 0.0f) {
+            if (vb <= 0 && d2 >= 0 && d6 <= 0) {
                 var w = d2 / (d2 - d6);
                 _out.set(a).mulAdd(ac, w); // barycentric coordinates (1-w,0,w)
                 return _out.dst2(p);
@@ -83,29 +83,29 @@ namespace NoLockstep.AI.Navmesh2D {
 
             // Check if P in edge region of BC, if so return projection of P onto BC
             var va = d3 * d6 - d5 * d4;
-            if (va <= 0.0f && (d4 - d3) >= 0.0f && (d5 - d6) >= 0.0f) {
+            if (va <= 0 && (d4 - d3) >= 0 && (d5 - d6) >= 0) {
                 var w = (d4 - d3) / ((d4 - d3) + (d5 - d6));
                 _out.set(b).mulAdd(c.sub(b), w); // barycentric coordinates (0,1-w,w)
                 return _out.dst2(p);
             }
 
             // P inside face region. Compute Q through its barycentric coordinates (u,v,w)
-            var denom = 1.0f / (va + vb + vc);
+            var denom = 1 / (va + vb + vc);
             {
-                float v = vb * denom;
-                float w = vc * denom;
+                LFloat v = vb * denom;
+                LFloat w = vc * denom;
                 _out.set(a).mulAdd(ab, v).mulAdd(ac, w);
             }
             return _out.dst2(p);
         }
 
-        public static bool IntersectRayTriangle(Ray ray, Vector3 t1, Vector3 t2, Vector3 t3, out Vector3 intersection){
-            intersection = Vector3.zero;
-            Vector3 edge1 = t2.sub(t1);
-            Vector3 edge2 = t3.sub(t1);
+        public static bool IntersectRayTriangle(Ray ray, LVector3 t1, LVector3 t2, LVector3 t3, out LVector3 intersection){
+            intersection = LVector3.zero;
+            LVector3 edge1 = t2.sub(t1);
+            LVector3 edge2 = t3.sub(t1);
 
-            Vector3 pvec = ray.direction.cross(edge2);
-            float det = edge1.dot(pvec);
+            LVector3 pvec = ray.direction.cross(edge2);
+            LFloat det = edge1.dot(pvec);
             if (IsZero(det)) {
                 var p = new Plane(t1, t2, t3);
                 if (p.testPoint(ray.origin) == PlaneSide.OnPlane && IsPointInTriangle(ray.origin, t1, t2, t3)) {
@@ -116,19 +116,19 @@ namespace NoLockstep.AI.Navmesh2D {
                 return false;
             }
 
-            det = 1.0f / det;
+            det = 1 / det;
 
-            Vector3 tvec = ray.origin.sub(t1);
-            float u = tvec.dot(pvec) * det;
-            if (u < 0.0f || u > 1.0f)
+            LVector3 tvec = ray.origin.sub(t1);
+            LFloat u = tvec.dot(pvec) * det;
+            if (u < 0 || u > 1)
                 return false;
 
-            Vector3 qvec = tvec.cross(edge1);
-            float v = ray.direction.dot(qvec) * det;
-            if (v < 0.0f || u + v > 1.0f)
+            LVector3 qvec = tvec.cross(edge1);
+            LFloat v = ray.direction.dot(qvec) * det;
+            if (v < 0 || u + v > 1)
                 return false;
 
-            float t = edge2.dot(qvec) * det;
+            LFloat t = edge2.dot(qvec) * det;
             if (t < 0)
                 return false;
 
@@ -142,7 +142,7 @@ namespace NoLockstep.AI.Navmesh2D {
             return true;
         }
 
-        public static bool IsPointInTriangle(Vector3 point, Vector3 t1, Vector3 t2, Vector3 t3){
+        public static bool IsPointInTriangle(LVector3 point, LVector3 t1, LVector3 t2, LVector3 t3){
             var v0 = (t1).sub(point);
             var v1 = (t2).sub(point);
             var v2 = (t3).sub(point);
@@ -160,8 +160,8 @@ namespace NoLockstep.AI.Navmesh2D {
             return true;
         }
 
-        public static bool IsZero(float value){
-            return Math.Abs(value) <= GeometryUtil.FLOAT_ROUNDING_ERROR;
+        public static bool IsZero(LFloat value){
+            return LMath.Abs(value) <= GeometryUtil.FLOAT_ROUNDING_ERROR;
         }
     }
 }

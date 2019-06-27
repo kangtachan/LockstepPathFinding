@@ -1,36 +1,36 @@
-using UnityEngine;
+using Lockstep.Math;
 
-namespace NoLockstep.AI.Navmesh2D {
+namespace Lockstep.AI.PathFinding {
     public class Funnel {
 
         public Plane leftPlane = new Plane(); // 左平面，高度为y轴
         public Plane rightPlane = new Plane();
-        public Vector3 leftPortal = new Vector3(); // 路径左顶点，
-        public Vector3 rightPortal = new Vector3(); // 路径右顶点
-        public Vector3 pivot = new Vector3(); // 漏斗点，路径的起点或拐点
+        public LVector3 leftPortal = new LVector3(); // 路径左顶点，
+        public LVector3 rightPortal = new LVector3(); // 路径右顶点
+        public LVector3 pivot = new LVector3(); // 漏斗点，路径的起点或拐点
 
-        public void setLeftPlane(Vector3 pivot, Vector3 leftEdgeVertex){
-            leftPlane.set(pivot, pivot.Add(Vector3.up), leftEdgeVertex);
+        public void setLeftPlane(LVector3 pivot, LVector3 leftEdgeVertex){
+            leftPlane.set(pivot, pivot.Add(LVector3.up), leftEdgeVertex);
             leftPortal = leftEdgeVertex;
         }
 
-        public void setRightPlane(Vector3 pivot, Vector3 rightEdgeVertex){
-            rightPlane.set(pivot, pivot.Add(Vector3.up), rightEdgeVertex); // 高度
+        public void setRightPlane(LVector3 pivot, LVector3 rightEdgeVertex){
+            rightPlane.set(pivot, pivot.Add(LVector3.up), rightEdgeVertex); // 高度
             rightPlane.normal = -rightPlane.normal; // 平面方向取反
             rightPlane.d = -rightPlane.d;
             rightPortal = (rightEdgeVertex);
         }
 
-        public void setPlanes(Vector3 pivot, TriangleEdge edge){
+        public void setPlanes(LVector3 pivot, TriangleEdge edge){
             setLeftPlane(pivot, edge.leftVertex);
             setRightPlane(pivot, edge.rightVertex);
         }
 
-        public PlaneSide sideLeftPlane(Vector3 point){
+        public PlaneSide sideLeftPlane(LVector3 point){
             return leftPlane.testPoint(point);
         }
 
-        public PlaneSide sideRightPlane(Vector3 point){
+        public PlaneSide sideRightPlane(LVector3 point){
             return rightPlane.testPoint(point);
         }
     }

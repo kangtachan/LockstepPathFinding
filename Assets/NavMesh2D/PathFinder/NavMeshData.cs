@@ -1,34 +1,34 @@
 using System;
 using System.Collections.Generic;
-using UnityEngine;
+using Lockstep.Math;
 
-namespace NoLockstep.AI.Navmesh2D {
+namespace Lockstep.AI.PathFinding {
     [Serializable]
     public class NavMeshData {
-        public float agentRadius = 0.5f;
+        public LFloat agentRadius = LFloat.half;
         private static long serialVersionUID = 1L;
 
         /** 行走区顶点序号 */
         public int[] pathTriangles;
 
         /** 行走区坐标 */
-        public Vector3[] pathVertices;
+        public LVector3[] pathVertices;
 
         /** 开始坐标 */
-        public float startX;
+        public LFloat startX;
 
-        public float startZ;
+        public LFloat startZ;
 
         /** 结束坐标 */
-        public float endX;
+        public LFloat endX;
 
-        public float endZ;
+        public LFloat endZ;
 
         /** navmesh地图id */
         public int mapID;
 
-        public float width; // 宽
-        public float height; // 高
+        public LFloat width; // 宽
+        public LFloat height; // 高
 
         /**
          * 数据检测，客户端的顶点坐标和三角形数据有可能是重复的ç∂
@@ -38,22 +38,23 @@ namespace NoLockstep.AI.Navmesh2D {
             amendmentSameVector(pathTriangles, pathVertices);
             scaleVector(pathVertices, scale);
 
-            this.width = Math.Abs(this.getEndX() - this.getStartX());
-            this.height = Math.Abs(this.getEndZ() - this.getStartZ());
+            this.width = LMath.Abs(this.getEndX() - this.getStartX());
+            this.height = LMath.Abs(this.getEndZ() - this.getStartZ());
         }
 
         /**
          * 缩放向量
          */
-        protected void scaleVector(Vector3[] vertices, int scale){
+        protected void scaleVector(LVector3[] vertices, int scale){
             if (vertices == null || scale == 1) {
                 return;
             }
 
+            var lscale = scale.ToLFloat();
             for (int i = 0; i < vertices.Length; i++) {
                 vertices[i].x += (-this.startX); // 缩放移动
                 vertices[i].z += (-this.startZ);
-                vertices[i].scl(scale);
+                vertices[i] = vertices[i] * lscale;
             }
         }
 
@@ -63,12 +64,12 @@ namespace NoLockstep.AI.Navmesh2D {
          * unity的NavMeshData有一些共边的三角形，共边的三角形其实不是连通关系，共边的三角形只是他们共同构成一个凸多边形，并且这种共边的三角形，全部都是扇形排列。
          * </p>
          */
-        public void amendmentSameVector(int[] indexs, Vector3[] vertices){
+        public void amendmentSameVector(int[] indexs, LVector3[] vertices){
             if (indexs == null || vertices == null) {
                 return;
             }
 
-            Dictionary<Vector3, int> map = new Dictionary<Vector3, int>();
+            Dictionary<LVector3, int> map = new Dictionary<LVector3, int>();
             // 检测路径重复点
             for (int i = 0; i < vertices.Length; i++) {
                 // 重复出现的坐标
@@ -98,43 +99,43 @@ namespace NoLockstep.AI.Navmesh2D {
             this.pathTriangles = pathTriangles;
         }
 
-        public Vector3[] GetPathVertices(){
+        public LVector3[] GetPathVertices(){
             return pathVertices;
         }
 
-        public void setPathVertices(Vector3[] pathVertices){
+        public void setPathVertices(LVector3[] pathVertices){
             this.pathVertices = pathVertices;
         }
 
-        public float getStartX(){
+        public LFloat getStartX(){
             return startX;
         }
 
-        public void setStartX(float startX){
+        public void setStartX(LFloat startX){
             this.startX = startX;
         }
 
-        public float getStartZ(){
+        public LFloat getStartZ(){
             return startZ;
         }
 
-        public void setStartZ(float startZ){
+        public void setStartZ(LFloat startZ){
             this.startZ = startZ;
         }
 
-        public float getEndX(){
+        public LFloat getEndX(){
             return endX;
         }
 
-        public void setEndX(float endX){
+        public void setEndX(LFloat endX){
             this.endX = endX;
         }
 
-        public float getEndZ(){
+        public LFloat getEndZ(){
             return endZ;
         }
 
-        public void setEndZ(float endZ){
+        public void setEndZ(LFloat endZ){
             this.endZ = endZ;
         }
 
@@ -147,19 +148,19 @@ namespace NoLockstep.AI.Navmesh2D {
         }
 
 
-        public float getWidth(){
+        public LFloat getWidth(){
             return width;
         }
 
-        public void setWidth(float width){
+        public void setWidth(LFloat width){
             this.width = width;
         }
 
-        public float getHeight(){
+        public LFloat getHeight(){
             return height;
         }
 
-        public void setHeight(float height){
+        public void setHeight(LFloat height){
             this.height = height;
         }
     }
