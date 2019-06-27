@@ -10,14 +10,14 @@ public class Funnel {
 
     public void setLeftPlane(Vector3 pivot, Vector3 leftEdgeVertex) {
         leftPlane.set(pivot, pivot.Add(Vector3.up), leftEdgeVertex);
-        leftPortal.set(leftEdgeVertex);
+        leftPortal = leftEdgeVertex;
     }
 
     public void setRightPlane(Vector3 pivot, Vector3 rightEdgeVertex) {
         rightPlane.set(pivot, pivot.Add(Vector3.up), rightEdgeVertex); // 高度
-        rightPlane.normal.scl(-1); // 平面方向取反
+        rightPlane.normal= -rightPlane.normal; // 平面方向取反
         rightPlane.d = -rightPlane.d;
-        rightPortal.set(rightEdgeVertex);
+        rightPortal = (rightEdgeVertex);
     }
     public void setPlanes(Vector3 pivot, TriangleEdge edge) {
         setLeftPlane(pivot, edge.leftVertex);

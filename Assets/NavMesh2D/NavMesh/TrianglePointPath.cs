@@ -146,7 +146,7 @@ public class TrianglePointPath {
         lastPointAdded.fromNode = edge.fromNode;
 
         Funnel funnel = new Funnel();
-        funnel.pivot.set(start); // 起点为漏斗点
+        funnel.pivot = (start); // 起点为漏斗点
         funnel.setPlanes(funnel.pivot, edge); // 设置第一对平面
 
         int leftIndex = 0; // 左顶点索引
@@ -179,7 +179,7 @@ public class TrianglePointPath {
                         vectors.Add(funnel.leftPortal);
                     }
 
-                    funnel.pivot.set(funnel.leftPortal);
+                    funnel.pivot = (funnel.leftPortal);
                     i = leftIndex;
                     rightIndex = i;
                     if (i < numEdges() - 1) {
@@ -210,7 +210,7 @@ public class TrianglePointPath {
                         vectors.Add(funnel.rightPortal);
                     }
 
-                    funnel.pivot.set(funnel.rightPortal);
+                    funnel.pivot = (funnel.rightPortal);
                     i = rightIndex;
                     leftIndex = i;
                     if (i < numEdges() - 1) {

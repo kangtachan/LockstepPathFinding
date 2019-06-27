@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using UnityEngine.Profiling;
 
 public class TriangleGraph : IndexedGraph<Triangle> {
     private NavMeshData _navMeshData;
@@ -232,22 +233,26 @@ public class TriangleGraph : IndexedGraph<Triangle> {
         return _sharedEdges;
     }
 
-    /**
-     * 获取所有三角形列表
-     * 
-     * @return
-     */
+    /**获取所有三角形列表     */
     public List<Triangle> getTriangles(){
         return _triangles;
     }
 
     public Triangle GetTriangle(Vector3 point){
         //TODO space partition bsp
+        Profiler.BeginSample("_GetTriangle");
+        var ret = _GetTriangle(point);
+        Profiler.EndSample();
+        return ret;
+    }
+
+    private Triangle _GetTriangle(Vector3 point){
         foreach (var triangle in _triangles) {
             if (triangle.IsInnerPoint(point)) {
                 return triangle;
             }
         }
+
         return null;
     }
 
